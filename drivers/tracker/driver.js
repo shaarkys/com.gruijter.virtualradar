@@ -29,6 +29,7 @@ class TrackerDriver extends Homey.Driver {
   async onInit() {
     this.log("TrackerDriver onInit");
     // init some variables
+    // moved to device.js
     this.radarServices = {
       openSky: {
         name: "openSky",
@@ -60,8 +61,8 @@ class TrackerDriver extends Homey.Driver {
           data: { id },
           settings: {
             pollingInterval: 20, // seconds
-			lat: Math.round(this.homey.geolocation.getLatitude() * 100000000) / 100000000,
-			lon: Math.round(this.homey.geolocation.getLongitude() * 100000000) / 100000000,
+            lat: Math.round(this.homey.geolocation.getLatitude() * 100000000) / 100000000,
+            lon: Math.round(this.homey.geolocation.getLongitude() * 100000000) / 100000000,
             dst: 5, // Distance in kilometres
             ico: data.ico || "",
             reg: data.reg || "",
@@ -81,7 +82,7 @@ class TrackerDriver extends Homey.Driver {
         const radar = new Radar[device.settings.service](opts);
         await radar.getAc(opts); // Testing settings
 
-        return device; // Success: Return the device data
+        return JSON.stringify(device); // Success: Return the device data
       } catch (error) {
         this.error("Pair error", error);
         throw error; // Failure: Throw the error to be handled by Homey

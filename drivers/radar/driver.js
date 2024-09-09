@@ -29,6 +29,7 @@ class RadarDriver extends Homey.Driver {
   async onInit() {
     this.log("ScannerDriver onInit");
     // init some variables
+
     this.radarServices = {
       openSky: {
         name: "openSky",
@@ -60,8 +61,8 @@ class RadarDriver extends Homey.Driver {
           data: { id },
           settings: {
             pollingInterval: 20, // seconds
-			lat: Math.round(this.homey.geolocation.getLatitude() * 100000000) / 100000000,
-			lon: Math.round(this.homey.geolocation.getLongitude() * 100000000) / 100000000,
+            lat: Math.round(this.homey.geolocation.getLatitude() * 100000000) / 100000000,
+            lon: Math.round(this.homey.geolocation.getLongitude() * 100000000) / 100000000,
             dst: 5, // Distance in kilometres
             int: false,
             sqk: "",
@@ -80,7 +81,7 @@ class RadarDriver extends Homey.Driver {
         const radar = new Radar[device.settings.service](opts);
         await radar.getAcInRange();
 
-        return device; // Report success to frontend
+        return JSON.stringify(device); // Report success to frontend
       } catch (error) {
         this.error("Pair error", error);
         throw error; // Report failure to frontend
