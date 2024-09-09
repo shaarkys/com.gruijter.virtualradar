@@ -109,7 +109,7 @@ function getTokens(ac) {
 class Tracker extends Homey.Device {
 
 	// this method is called when the Device is inited
-	onInit() {
+	async onInit() {
 		this.log(`device init ${this.getClass()} ${this.getName()}`);
 		clearInterval(this.intervalIdDevicePoll);	// if polling, stop polling
 		this.settings = this.getSettings();
@@ -117,6 +117,7 @@ class Tracker extends Homey.Device {
 		this.ac = undefined;
 		this.flowCards = {};
 		this.registerFlowCards();
+		await this.registerMultipleCapabilities(this.radarServices.openSky.capabilities);
 		this.intervalIdDevicePoll = setInterval(async () => {
 			try {
 				this.scan();
@@ -125,18 +126,18 @@ class Tracker extends Homey.Device {
 	}
 
 	// this method is called when the Device is added
-	onAdded() {
+	async onAdded() {
 		this.log(`tracker added: ${this.getData().id}`);
 	}
 
 	// this method is called when the Device is deleted
-	onDeleted() {
+	async onDeleted() {
 		this.log(`tracker deleted: ${this.getData().id}`);
 		clearInterval(this.intervalIdDevicePoll);
 	}
 
 	// this method is called when the user has changed the device's settings in Homey.
-	onSettings(newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
+	async onSettings(newSettingsObj, oldSettingsObj, changedKeysArr, callback) {
 		// first stop polling the device, then start init after short delay
 		clearInterval(this.intervalIdDevicePoll);
 		this.log('tracker device settings changed');
@@ -148,7 +149,7 @@ class Tracker extends Homey.Device {
 		callback(null, true);
 	}
 
-	setCapability(capability, value) {
+	async setCapability(capability, value) {
 		if (this.hasCapability(capability)) {
 			this.setCapabilityValue(capability, value)
 				.catch((error) => {
@@ -225,7 +226,7 @@ class Tracker extends Homey.Device {
 		}
 	}
 
-	setAcCapabilities(ac) {
+	async setAcCapabilities(ac) {
 		try {
 			if (!ac) {	// no aircraft data available
 				this.setCapability('onoff', false);
@@ -254,19 +255,25 @@ class Tracker extends Homey.Device {
 		}
 	}
 
-	registerFlowCards() {
-	// register trigger flow cards
-		this.flowCards.trackerOnlineTrigger = new Homey.FlowCardTriggerDevice('tracker_online')
-			.register();
-		this.flowCards.trackerOfflineTrigger = new Homey.FlowCardTriggerDevice('tracker_offline')
-			.register();
-		this.flowCards.trackerPresentTrigger = new Homey.FlowCardTriggerDevice('tracker_present')
-			.register();
-		this.flowCards.wentAirborneTrigger = new Homey.FlowCardTriggerDevice('went_airborne')
-			.register();
-		this.flowCards.justLandedTrigger = new Homey.FlowCardTriggerDevice('just_landed')
-			.register();
-	}
+	async registerFlowCards() {
+		// register trigger flow cards in SDK3 style
+		this.flowCards = {};
+	  
+		this.flowCards.trackerOnlineTrigger = new Homey.FlowCardTriggerDevice('tracker_online');
+		await this.flowCards.trackerOnlineTrigger.register();
+	  
+		this.flowCards.trackerOfflineTrigger = new Homey.FlowCardTriggerDevice('tracker_offline');
+		await this.flowCards.trackerOfflineTrigger.register();
+	  
+		this.flowCards.trackerPresentTrigger = new Homey.FlowCardTriggerDevice('tracker_present');
+		await this.flowCards.trackerPresentTrigger.register();
+	  
+		this.flowCards.wentAirborneTrigger = new Homey.FlowCardTriggerDevice('went_airborne');
+		await this.flowCards.wentAirborneTrigger.register();
+	  
+		this.flowCards.justLandedTrigger = new Homey.FlowCardTriggerDevice('just_landed');
+		await this.flowCards.justLandedTrigger.register();
+	  }
 
 }
 

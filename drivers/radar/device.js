@@ -69,6 +69,7 @@ class RadarDevice extends Homey.Device {
 		this.acList = [];
 		this.flowCards = {};
 		this.registerFlowCards();
+		this.registerMultipleCapabilities(this.radarServices.openSky.capabilities);
 		this.intervalIdDevicePoll = setInterval(async () => {
 			try {
 				this.scan();
@@ -189,15 +190,19 @@ class RadarDevice extends Homey.Device {
 		}
 	}
 
-	registerFlowCards() {
-	// register trigger flow cards
-		this.flowCards.acEnteringTrigger = new Homey.FlowCardTriggerDevice('ac_entering')
-			.register();
-		this.flowCards.acLeftTrigger = new Homey.FlowCardTriggerDevice('ac_left')
-			.register();
-		this.flowCards.acPresentTrigger = new Homey.FlowCardTriggerDevice('ac_present')
-			.register();
-	}
+	async registerFlowCards() {
+		// register trigger flow cards in SDK3 style
+		this.flowCards = {};
+	  
+		this.flowCards.acEnteringTrigger = new Homey.FlowCardTriggerDevice('ac_entering');
+		await this.flowCards.acEnteringTrigger.register();
+	  
+		this.flowCards.acLeftTrigger = new Homey.FlowCardTriggerDevice('ac_left');
+		await this.flowCards.acLeftTrigger.register();
+	  
+		this.flowCards.acPresentTrigger = new Homey.FlowCardTriggerDevice('ac_present');
+		await this.flowCards.acPresentTrigger.register();
+	  }
 
 }
 

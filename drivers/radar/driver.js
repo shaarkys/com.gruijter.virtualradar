@@ -18,75 +18,75 @@ You should have received a copy of the GNU General Public License
 along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-'use strict';
+"use strict";
 
-const Homey = require('homey');
-const crypto = require('crypto');
-const Radar = require('../../radar');
+const Homey = require("homey");
+const crypto = require("crypto");
+const Radar = require("../../radar");
 // const util = require('util');
 
 class RadarDriver extends Homey.Driver {
+  async onInit() {
+    this.log("ScannerDriver onInit");
+    // init some variables
+    this.radarServices = {
+      openSky: {
+        name: "openSky",
+        capabilities: ["ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        APIKey: false,
+      },
+      adsbExchangeFeeder: {
+        name: "adsbExchangeFeeder",
+        capabilities: ["ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        APIKey: true,
+      },
+      // adsbExchangePaid: {
+      // 	name: 'adsbExchangePaid',
+      // 	capabilities: ['ac_number', 'to', 'op', 'mdl', 'dst', 'alt', 'oc'],
+      // },
+    };
+  }
 
-	onInit() {
-		this.log('ScannerDriver onInit');
-		// init some variables
-		this.radarServices = {
-			openSky: {
-				name: 'openSky',
-				capabilities: ['ac_number', 'to', 'op', 'mdl', 'dst', 'alt', 'oc'],
-				APIKey: false,
-			},
-			adsbExchangeFeeder: {
-				name: 'adsbExchangeFeeder',
-				capabilities: ['ac_number', 'to', 'op', 'mdl', 'dst', 'alt', 'oc'],
-				APIKey: true,
-			},
-			// adsbExchangePaid: {
-			// 	name: 'adsbExchangePaid',
-			// 	capabilities: ['ac_number', 'to', 'op', 'mdl', 'dst', 'alt', 'oc'],
-			// },
-		};
-	}
+  async onPair(socket) {
+    socket.setHandler("validate", async (data) => {
+      try {
+        this.log("save button pressed in frontend");
+        const service = data.radarSelection || "openSky";
+        const id = `${this.radarServices[service].name}_${crypto.randomBytes(3).toString("hex")}`;
+        const name = service;
 
-	onPair(socket) {
-		socket.on('validate', async (data, callback) => {
-			try {
-				this.log('save button pressed in frontend');
-				const service = data.radarSelection || 'openSky';
-				const id = `${this.radarServices[service].name}_${crypto.randomBytes(3).toString('hex')}`; // e.g openSky_f9b327
-				const name = service;
-				const device = {
-					name,
-					data: { id },
-					settings: {
-						pollingInterval: 20, // seconds
-						lat: Math.round(Homey.ManagerGeolocation.getLatitude() * 100000000) / 100000000,
-						lon: Math.round(Homey.ManagerGeolocation.getLongitude() * 100000000) / 100000000,
-						dst: 5, //	Distance in kilometres,
-						int: false,
-						sqk: '',
-						onlyGnd: false,
-						onlyAir: true,
-						service: this.radarServices[service].name,
-						username: data.username,
-						password: data.password,
-						APIKey: data.APIKey,
-					},
-					capabilities: this.radarServices[service].capabilities,
-				};
-				// test if settings work
-				const opts = device.settings;
-				const radar = new Radar[device.settings.service](opts);
-				radar.getAcInRange()
-					.then(() => callback(null, JSON.stringify(device))) // report success to frontend
-					.catch((error) => callback(error)); // report failure to frontend
-			}	catch (error) {
-				this.error('Pair error', error);
-				callback(error);
-			}
-		});
-	}
+        const device = {
+          name,
+          data: { id },
+          settings: {
+            pollingInterval: 20, // seconds
+			lat: Math.round(this.homey.geolocation.getLatitude() * 100000000) / 100000000,
+			lon: Math.round(this.homey.geolocation.getLongitude() * 100000000) / 100000000,
+            dst: 5, // Distance in kilometres
+            int: false,
+            sqk: "",
+            onlyGnd: false,
+            onlyAir: true,
+            service: this.radarServices[service].name,
+            username: data.username,
+            password: data.password,
+            APIKey: data.APIKey,
+          },
+          capabilities: this.radarServices[service].capabilities,
+        };
 
+        // Test if settings work
+        const opts = device.settings;
+        const radar = new Radar[device.settings.service](opts);
+        await radar.getAcInRange();
+
+        return device; // Report success to frontend
+      } catch (error) {
+        this.error("Pair error", error);
+        throw error; // Report failure to frontend
+      }
+    });
+  }
 }
 
 module.exports = RadarDriver;

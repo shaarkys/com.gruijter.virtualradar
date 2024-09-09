@@ -25,7 +25,7 @@ const Logger = require('./captureLogs.js');
 
 class VirtualRadarApp extends Homey.App {
 
-	onInit() {
+	async onInit() {
 		this.log('Virtual Radar app is running!');
 		if (!this.logger) this.logger = new Logger({ homey: this, length: 200 });
 		// register some listeners
@@ -35,8 +35,7 @@ class VirtualRadarApp extends Homey.App {
 		process.on('uncaughtException', (error) => {
 			this.error('uncaughtException! ', error);
 		});
-		Homey
-			.on('unload', () => {
+		this.on('unload', () => {
 				this.log('app unload called');
 				// save logs to persistant storage
 				this.logger.saveLogs();
