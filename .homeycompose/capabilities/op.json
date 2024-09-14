@@ -1,0 +1,15 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Operator",
+    "nl": "Operator"
+  },
+  "desc": {
+    "en": "Operator of the aircraft",
+    "nl": "Operaror van het vliegtuig"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": false,
+  "icon": "./assets/op.svg"
+}

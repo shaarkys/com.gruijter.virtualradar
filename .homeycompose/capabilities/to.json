@@ -1,0 +1,15 @@
+{
+  "type": "string",
+  "title": {
+    "en": "To",
+    "nl": "Naar"
+  },
+  "desc": {
+    "en": "Destination airport",
+    "nl": "Luchthaven van bestemming"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": false,
+  "icon": "./assets/to.svg"
+}

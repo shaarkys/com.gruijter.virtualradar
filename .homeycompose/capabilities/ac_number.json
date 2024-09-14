@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "In range",
+    "nl": "In bereik"
+  },
+  "desc": {
+    "en": "Number of aircraft in range",
+    "nl": "Aantal vliegtuigen in bereik"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": true,
+  "icon": "./assets/ac_number.svg"
+}

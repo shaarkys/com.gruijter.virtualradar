@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Distance",
+    "nl": "Afstand"
+  },
+  "units": {
+    "en": "km",
+    "nl": "km"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": false,
+  "icon": "./assets/dst.svg"
+}

@@ -1,0 +1,215 @@
+{
+  "name": {
+    "en": "Radar (ADS-B)",
+    "nl": "Radar (ADS-B)"
+  },
+  "images": {
+    "large": "drivers/radar/assets/images/large.jpg",
+    "small": "drivers/radar/assets/images/small.jpg"
+  },
+  "class": "sensor",
+  "capabilities": [
+    "ac_number",
+    "to",
+    "op",
+    "mdl",
+    "dst",
+    "alt",
+    "oc"
+  ],
+  "capabilitiesOptions": {
+    "ac_number": {
+      "preventInsights": false
+    },
+    "dst": {
+      "preventInsights": true
+    },
+    "alt": {
+      "preventInsights": true
+    }
+  },
+  "mobile": {
+    "components": [
+      {
+        "id": "icon"
+      },
+      {
+        "id": "sensor",
+        "capabilities": [
+          "ac_number",
+          "to",
+          "op",
+          "mdl",
+          "dst",
+          "alt",
+          "oc"
+        ],
+        "options": {
+          "icons": {
+            "ac_number": "./assets/ac_number.svg",
+            "to": "./assets/to.svg",
+            "op": "./assets/op.svg",
+            "mdl": "./assets/mdl.svg",
+            "dst": "./assets/dst.svg",
+            "alt": "./assets/alt.svg",
+            "oc": "./assets/oc.svg"
+          }
+        }
+      }
+    ]
+  },
+  "pair": [
+    {
+      "id": "pair"
+    }
+  ],
+  "settings": [
+    {
+      "type": "group",
+      "label": {
+        "en": "Radar service settings",
+        "nl": "Radar dienst instellingen"
+      },
+      "children": [
+        {
+          "id": "service",
+          "type": "label",
+          "label": {
+            "en": "Service",
+            "nl": "Dienst"
+          },
+          "hint": {
+            "en": "Some services are open, some require a (free/paid) subscription.",
+            "nl": "Sommige diensten zijn open, sommige hebben een (gratis/betaald) abonnement."
+          },
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Radar settings",
+        "nl": "Radar instellingen"
+      },
+      "children": [
+        {
+          "id": "lat",
+          "type": "number",
+          "label": {
+            "en": "Latitude",
+            "nl": "Breedtegraad"
+          },
+          "hint": {
+            "en": "The distance of aircraft will be based on the radar location.",
+            "nl": "De afstand van toestellen wordt bepaald op basis van de radar locatie."
+          },
+          "value": 52.228936
+        },
+        {
+          "id": "lon",
+          "type": "number",
+          "label": {
+            "en": "Longitude",
+            "nl": "Lengtegraad"
+          },
+          "hint": {
+            "en": "The distance of aircraft will be based on the radar location.",
+            "nl": "De afstand van toestellen wordt bepaald op basis van de radar locatie."
+          },
+          "value": 5.321492
+        },
+        {
+          "id": "dst",
+          "type": "number",
+          "label": {
+            "en": "Range (km)",
+            "nl": "Straal (km)"
+          },
+          "hint": {
+            "en": "The radar will find aircrafts within the set range.",
+            "nl": "De radar zal toestellen vinden binnen de ingestelde straal."
+          },
+          "attr": {
+            "min": 0,
+            "max": 100
+          },
+          "value": 3
+        },
+        {
+          "id": "pollingInterval",
+          "type": "number",
+          "label": {
+            "en": "Scan interval (seconds)",
+            "nl": "Scan interval (seconden)"
+          },
+          "attr": {
+            "min": 15
+          },
+          "value": 20
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Limit the results to the selected filters",
+        "nl": "Beperk de resultaten tot de aangevinkte filters"
+      },
+      "children": [
+        {
+          "id": "int",
+          "type": "checkbox",
+          "label": {
+            "en": "Interesting",
+            "nl": "Interessant"
+          },
+          "hint": {
+            "en": "Is the aircraft marked as interesting.",
+            "nl": "Staat het toestel gemarkeerd als interessant."
+          },
+          "value": false
+        },
+        {
+          "id": "onlyGnd",
+          "type": "checkbox",
+          "label": {
+            "en": "On ground",
+            "nl": "Aan de grond"
+          },
+          "value": false,
+          "hint": {
+            "en": "If checked, only planes on the ground will be included",
+            "nl": "Aangevinkt: alleen vliegtuigen op de grond worden inbegrepen"
+          }
+        },
+        {
+          "id": "onlyAir",
+          "type": "checkbox",
+          "label": {
+            "en": "In air",
+            "nl": "In de lucht"
+          },
+          "value": false,
+          "hint": {
+            "en": "If checked, only planes not on the ground will be included",
+            "nl": "Aangevinkt: alleen vliegtuigen niet op de grond worden inbegrepen"
+          }
+        },
+        {
+          "id": "sqk",
+          "type": "text",
+          "value": "",
+          "label": {
+            "en": "Squawk",
+            "nl": "Squawk"
+          },
+          "hint": {
+            "en": "Only aircraft that broadcast the entered emergency squawk will be included.",
+            "nl": "Alleen toestellen die de ingevoerde squawk uitzenden worden inbegrepen"
+          }
+        }
+      ]
+    }
+  ]
+}

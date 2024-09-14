@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Altitude",
+    "nl": "Hoogte"
+  },
+  "units": {
+    "en": "m",
+    "nl": "m"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": false,
+  "icon": "./assets/alt.svg"
+}

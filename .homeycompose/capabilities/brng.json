@@ -1,0 +1,15 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Bearing",
+    "nl": "Richting"
+  },
+  "desc": {
+    "en": "Bearing of the aircraft",
+    "nl": "Vliegrichting"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": false,
+  "icon": "./assets/brng.svg"
+}

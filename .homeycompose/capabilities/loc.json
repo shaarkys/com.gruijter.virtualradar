@@ -1,0 +1,15 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Location",
+    "nl": "Locatie"
+  },
+  "desc": {
+    "en": "Location of the aircraft",
+    "nl": "Locatie van het vliegtuig"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": false,
+  "icon": "./assets/loc.svg"
+}

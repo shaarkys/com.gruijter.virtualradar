@@ -88,7 +88,7 @@ class VirtualRadar {
 			};
 			const result = await this._makeHttpsRequest(options);
 			if (result.statusCode !== 200 || result.headers['content-type'] !== 'application/json') {
-				throw Error(`Service: ${result.statusCode} ${result.body.substring(0, 40)}`);
+				throw Error(`API error : ${result.statusCode} ${result.body.substring(0, 40)}`);
 			}
 			const jsonData = JSON.parse(result.body);
 			// console.log(util.inspect(jsonData, { depth: null, colors: true }));

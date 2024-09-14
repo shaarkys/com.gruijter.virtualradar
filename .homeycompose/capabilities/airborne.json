@@ -1,0 +1,15 @@
+{
+  "type": "boolean",
+  "title": {
+    "en": "Airborne",
+    "nl": "In de lucht"
+  },
+  "desc": {
+    "en": "Aircraft is airborne",
+    "nl": "Vliegtuig is in de lucht"
+  },
+  "getable": true,
+  "setable": true,
+  "insights": true,
+  "icon": "./assets/airborne.svg"
+}

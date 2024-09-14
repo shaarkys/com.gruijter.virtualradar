@@ -1,0 +1,184 @@
+{
+  "name": {
+    "en": "Tracker (ADS-B)",
+    "nl": "Tracker (ADS-B)"
+  },
+  "images": {
+    "large": "drivers/tracker/assets/images/large.jpg",
+    "small": "drivers/tracker/assets/images/small.jpg"
+  },
+  "class": "sensor",
+  "capabilities": [
+    "onoff",
+    "loc",
+    "brng",
+    "alt",
+    "spd",
+    "to",
+    "dst",
+    "ttime"
+  ],
+  "capabilitiesOptions": {
+    "onoff": {
+      "preventInsights": false,
+      "greyout": true
+    },
+    "alt": {
+      "preventInsights": true
+    },
+    "spd": {
+      "preventInsights": true
+    },
+    "dst": {
+      "preventInsights": true
+    }
+  },
+  "mobile": {
+    "components": [
+      {
+        "id": "icon",
+        "capabilities": [
+          "onoff"
+        ]
+      },
+      {
+        "id": "sensor",
+        "capabilities": [
+          "loc",
+          "brng",
+          "alt",
+          "spd",
+          "to",
+          "dst",
+          "ttime"
+        ],
+        "options": {
+          "icons": {
+            "loc": "./assets/loc.svg",
+            "brng": "./assets/brng.svg",
+            "alt": "./assets/alt.svg",
+            "spd": "./assets/spd.svg",
+            "to": "./assets/to.svg",
+            "dst": "./assets/dst.svg",
+            "ttime": "./assets/ttime.svg"
+          }
+        }
+      }
+    ]
+  },
+  "pair": [
+    {
+      "id": "pair"
+    }
+  ],
+  "settings": [
+    {
+      "type": "group",
+      "label": {
+        "en": "Radar service settings",
+        "nl": "Radar dienst instellingen"
+      },
+      "children": [
+        {
+          "id": "service",
+          "type": "label",
+          "label": {
+            "en": "Service",
+            "nl": "Dienst"
+          },
+          "hint": {
+            "en": "Some services are open, some require a (free/paid) subscription.",
+            "nl": "Sommige diensten zijn open, sommige hebben een (gratis/betaald) abonnement."
+          },
+          "value": ""
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Tracker settings",
+        "nl": "Tracker instellingen"
+      },
+      "children": [
+        {
+          "id": "lat",
+          "type": "number",
+          "label": {
+            "en": "Home latitude",
+            "nl": "Thuis breedtegraad"
+          },
+          "hint": {
+            "en": "The distance of the tracked aircraft will be based on the home location.",
+            "nl": "De afstand van het toestel wordt bepaald op basis van de thuis locatie."
+          },
+          "value": 52.228936
+        },
+        {
+          "id": "lng",
+          "type": "number",
+          "label": {
+            "en": "Home longitude",
+            "nl": "Thuis lengtegraad"
+          },
+          "hint": {
+            "en": "The distance of the tracked aircraft will be based on the home location.",
+            "nl": "De afstand van het toestel wordt bepaald op basis van de thuis locatie."
+          },
+          "value": 5.321492
+        },
+        {
+          "id": "ico",
+          "type": "text",
+          "label": {
+            "en": "ICAO",
+            "nl": "ICAO"
+          },
+          "hint": {
+            "en": "Use either ICAO or Registration or Callsign, and leave the others blank.",
+            "nl": "Gebruik of ICAO of Registratie of Callsign, en laat de overigen leeg."
+          },
+          "value": "------"
+        },
+        {
+          "id": "reg",
+          "type": "text",
+          "label": {
+            "en": "Registration",
+            "nl": "Registratie"
+          },
+          "hint": {
+            "en": "Use either ICAO or Registration or Callsign, and leave the others blank.",
+            "nl": "Gebruik of ICAO of Registratie of Callsign, en laat de overigen leeg."
+          },
+          "value": ""
+        },
+        {
+          "id": "call",
+          "type": "text",
+          "label": {
+            "en": "Callsign",
+            "nl": "Callsign"
+          },
+          "hint": {
+            "en": "Use either ICAO or Registration or Callsign, and leave the others blank.",
+            "nl": "Gebruik of ICAO of Registratie of Callsign, en laat de overigen leeg."
+          },
+          "value": ""
+        },
+        {
+          "id": "pollingInterval",
+          "type": "number",
+          "label": {
+            "en": "Scan interval (seconds)",
+            "nl": "Scan interval (seconden)"
+          },
+          "attr": {
+            "min": 15
+          },
+          "value": 180
+        }
+      ]
+    }
+  ]
+}

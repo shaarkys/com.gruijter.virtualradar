@@ -56,7 +56,7 @@ class PlaneFinder {
 			};
 			const result = await this._makeHttpsRequest(options);
 			if ((result.statusCode !== 200) && (result.statusCode !== 301)) {
-				throw Error(`Service: ${result.statusCode} ${result.body.substring(0, 40)}`);
+				throw Error(`API error : ${result.statusCode} ${result.body.substring(0, 40)}`);
 			}
 			// console.log(result.body);
 			// const description = regexDescription.exec(result.body) || [];

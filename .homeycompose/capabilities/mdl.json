@@ -1,0 +1,15 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Model",
+    "nl": "Model"
+  },
+  "desc": {
+    "en": "Model of the aircraft",
+    "nl": "Model van het vliegtuig"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": false,
+  "icon": "./assets/mdl.svg"
+}

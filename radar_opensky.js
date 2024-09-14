@@ -316,7 +316,7 @@ class VirtualRadar {
     try {
       const result = await this._makeHttpsRequest(options);
       if (result.statusCode !== 200 || !result.headers["content-type"].includes("application/json")) {
-        throw Error(`Service: ${result.statusCode}`);
+        throw Error(`API error : ${result.statusCode}`);
       }
       const jsonData = JSON.parse(result.body);
       // this.log(util.inspect(jsonData, { depth: null, colors: true }));

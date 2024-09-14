@@ -1,0 +1,80 @@
+{
+  "id": "com.gruijter.virtualradar",
+  "name": {
+    "en": "Virtual Radar",
+    "nl": "Virtuele Radar"
+  },
+  "brandColor": "#1d7a36",
+  "version": "3.2.1",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "description": {
+    "en": "Turn Homey into an airspace radar and tracker based on ADS-B tracker info",
+    "nl": "Maak van Homey een luchtruim radar gebaseerd op ADS-B tracker info"
+  },
+  "tags": {
+    "en": [
+      "ADS-B",
+      "radar",
+      "tracking",
+      "tracker",
+      "airplane",
+      "helicopter"
+    ],
+    "nl": [
+      "ADS-B",
+      "radar",
+      "tracking",
+      "tracker",
+      "localiseren",
+      "vliegtuig",
+      "helicopter"
+    ]
+  },
+  "category": [
+    "localization",
+    "internet",
+    "tools"
+  ],
+  "author": {
+    "name": "Bretislav Kubesa"
+  },
+  "contributors": {
+    "developers": [
+      {
+        "name": "Robin de Gruijter",
+        "email": "gruijter@hotmail.com"
+      }
+    ]
+  },
+  "copyright": "Robin de Gruijter (gruijter@hotmail.com)",
+  "license": " GPL-3.0-or-later",
+  "contributing": {
+    "donate": {
+      "paypal": {
+        "username": "bkubesa"
+      }
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/shaarkys/com.gruijter.virtualradar/issues"
+  },
+  "homeyCommunityTopicId": 14605,
+  "images": {
+    "large": "/assets/images/large.jpg",
+    "small": "/assets/images/small.jpg"
+  },
+  "api": {
+    "getLogs": {
+      "method": "get",
+      "path": "/getlogs"
+    },
+    "deleteLogs": {
+      "method": "get",
+      "path": "/deletelogs"
+    }
+  },
+  "permissions": [
+    "homey:manager:geolocation"
+  ]
+}

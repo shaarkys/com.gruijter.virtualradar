@@ -99,7 +99,7 @@ class FlightAware {
 			};
 			const result = await this._makeHttpsRequest(options);
 			if ((result.statusCode !== 200) && (result.statusCode !== 301)) {
-				throw Error(`Service: ${result.statusCode}`);
+				throw Error(`API error : ${result.statusCode}`);
 			}
 			// console.log(result.body);
 			const description = regexDescription.exec(result.body) || [];

@@ -1,0 +1,954 @@
+{
+  "triggers": [
+    {
+      "id": "tracker_online",
+      "title": {
+        "en": "Tracker came online",
+        "nl": "Tracker komt online"
+      },
+      "args": [],
+      "tokens": [
+        {
+          "name": "lon",
+          "type": "number",
+          "title": {
+            "en": "lon",
+            "nl": "lon"
+          },
+          "example": 5.3214
+        },
+        {
+          "name": "lat",
+          "type": "number",
+          "title": {
+            "en": "lat",
+            "nl": "lat"
+          },
+          "example": 52.2289
+        },
+        {
+          "name": "dst",
+          "type": "number",
+          "title": {
+            "en": "dist.",
+            "nl": "afstand"
+          },
+          "example": 14.97
+        },
+        {
+          "name": "brng",
+          "type": "number",
+          "title": {
+            "en": "bearing",
+            "nl": "richting"
+          },
+          "example": 309.4
+        },
+        {
+          "name": "alt",
+          "type": "number",
+          "title": {
+            "en": "alt.",
+            "nl": "hoogte"
+          },
+          "example": 357
+        },
+        {
+          "name": "spd",
+          "type": "number",
+          "title": {
+            "en": "km/h",
+            "nl": "km/u"
+          },
+          "example": 238
+        },
+        {
+          "name": "vsi",
+          "type": "number",
+          "title": {
+            "en": "vert.",
+            "nl": "vert."
+          },
+          "example": -12
+        },
+        {
+          "name": "tsecs",
+          "type": "number",
+          "title": {
+            "en": "tracktime",
+            "nl": "tracktijd"
+          },
+          "example": 843
+        },
+        {
+          "name": "gnd",
+          "type": "boolean",
+          "title": {
+            "en": "ground",
+            "nl": "grond"
+          },
+          "example": false
+        },
+        {
+          "name": "mil",
+          "type": "boolean",
+          "title": {
+            "en": "mil",
+            "nl": "mil"
+          },
+          "example": false
+        },
+        {
+          "name": "help",
+          "type": "boolean",
+          "title": {
+            "en": "help",
+            "nl": "help"
+          },
+          "example": false
+        },
+        {
+          "name": "icao",
+          "type": "string",
+          "title": {
+            "en": "icao",
+            "nl": "icao"
+          },
+          "example": "484A92"
+        },
+        {
+          "name": "reg",
+          "type": "string",
+          "title": {
+            "en": "reg",
+            "nl": "reg"
+          },
+          "example": "PH-PXB"
+        },
+        {
+          "name": "call",
+          "type": "string",
+          "title": {
+            "en": "call",
+            "nl": "call"
+          },
+          "example": "ZXP02"
+        },
+        {
+          "name": "mdl",
+          "type": "string",
+          "title": {
+            "en": "model",
+            "nl": "model"
+          },
+          "example": "Eurocopter EC135 P2+"
+        },
+        {
+          "name": "op",
+          "type": "string",
+          "title": {
+            "en": "oprtr",
+            "nl": "oprtr"
+          },
+          "example": "KLPD Police Aviation Service"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "title": {
+            "en": "from",
+            "nl": "van"
+          },
+          "example": "EPWA Warsaw Chopin, Poland"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "title": {
+            "en": "to",
+            "nl": "naar"
+          },
+          "example": "EHAM Amsterdam Airport Schiphol, Netherlands"
+        },
+        {
+          "name": "oc",
+          "type": "string",
+          "title": {
+            "en": "country",
+            "nl": "land"
+          },
+          "example": "Belgium"
+        },
+        {
+          "name": "loc",
+          "type": "string",
+          "title": {
+            "en": "location",
+            "nl": "locatie"
+          },
+          "example": "NL Amsterdam"
+        }
+      ]
+    },
+    {
+      "id": "tracker_offline",
+      "title": {
+        "en": "Tracker went offline",
+        "nl": "Tracker gaat offline"
+      },
+      "args": [],
+      "tokens": [
+        {
+          "name": "lon",
+          "type": "number",
+          "title": {
+            "en": "lon",
+            "nl": "lon"
+          },
+          "example": 5.3214
+        },
+        {
+          "name": "lat",
+          "type": "number",
+          "title": {
+            "en": "lat",
+            "nl": "lat"
+          },
+          "example": 52.2289
+        },
+        {
+          "name": "dst",
+          "type": "number",
+          "title": {
+            "en": "dist.",
+            "nl": "afstand"
+          },
+          "example": 14.97
+        },
+        {
+          "name": "brng",
+          "type": "number",
+          "title": {
+            "en": "bearing",
+            "nl": "richting"
+          },
+          "example": 309.4
+        },
+        {
+          "name": "alt",
+          "type": "number",
+          "title": {
+            "en": "alt.",
+            "nl": "hoogte"
+          },
+          "example": 357
+        },
+        {
+          "name": "spd",
+          "type": "number",
+          "title": {
+            "en": "km/h",
+            "nl": "km/u"
+          },
+          "example": 238
+        },
+        {
+          "name": "vsi",
+          "type": "number",
+          "title": {
+            "en": "vert.",
+            "nl": "vert."
+          },
+          "example": -12
+        },
+        {
+          "name": "tsecs",
+          "type": "number",
+          "title": {
+            "en": "tracktime",
+            "nl": "tracktijd"
+          },
+          "example": 843
+        },
+        {
+          "name": "gnd",
+          "type": "boolean",
+          "title": {
+            "en": "ground",
+            "nl": "grond"
+          },
+          "example": false
+        },
+        {
+          "name": "mil",
+          "type": "boolean",
+          "title": {
+            "en": "mil",
+            "nl": "mil"
+          },
+          "example": false
+        },
+        {
+          "name": "help",
+          "type": "boolean",
+          "title": {
+            "en": "help",
+            "nl": "help"
+          },
+          "example": false
+        },
+        {
+          "name": "icao",
+          "type": "string",
+          "title": {
+            "en": "icao",
+            "nl": "icao"
+          },
+          "example": "484A92"
+        },
+        {
+          "name": "reg",
+          "type": "string",
+          "title": {
+            "en": "reg",
+            "nl": "reg"
+          },
+          "example": "PH-PXB"
+        },
+        {
+          "name": "call",
+          "type": "string",
+          "title": {
+            "en": "call",
+            "nl": "call"
+          },
+          "example": "ZXP02"
+        },
+        {
+          "name": "mdl",
+          "type": "string",
+          "title": {
+            "en": "model",
+            "nl": "model"
+          },
+          "example": "Eurocopter EC135 P2+"
+        },
+        {
+          "name": "op",
+          "type": "string",
+          "title": {
+            "en": "oprtr",
+            "nl": "oprtr"
+          },
+          "example": "KLPD Police Aviation Service"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "title": {
+            "en": "from",
+            "nl": "van"
+          },
+          "example": "EPWA Warsaw Chopin, Poland"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "title": {
+            "en": "to",
+            "nl": "naar"
+          },
+          "example": "EHAM Amsterdam Airport Schiphol, Netherlands"
+        },
+        {
+          "name": "oc",
+          "type": "string",
+          "title": {
+            "en": "country",
+            "nl": "land"
+          },
+          "example": "Belgium"
+        },
+        {
+          "name": "loc",
+          "type": "string",
+          "title": {
+            "en": "location",
+            "nl": "locatie"
+          },
+          "example": "NL Amsterdam"
+        }
+      ]
+    },
+    {
+      "id": "tracker_present",
+      "title": {
+        "en": "Tracker updated",
+        "nl": "Tracker geupdated"
+      },
+      "args": [],
+      "tokens": [
+        {
+          "name": "lon",
+          "type": "number",
+          "title": {
+            "en": "lon",
+            "nl": "lon"
+          },
+          "example": 5.3214
+        },
+        {
+          "name": "lat",
+          "type": "number",
+          "title": {
+            "en": "lat",
+            "nl": "lat"
+          },
+          "example": 52.2289
+        },
+        {
+          "name": "dst",
+          "type": "number",
+          "title": {
+            "en": "dist.",
+            "nl": "afstand"
+          },
+          "example": 14.97
+        },
+        {
+          "name": "brng",
+          "type": "number",
+          "title": {
+            "en": "bearing",
+            "nl": "richting"
+          },
+          "example": 309.4
+        },
+        {
+          "name": "alt",
+          "type": "number",
+          "title": {
+            "en": "alt.",
+            "nl": "hoogte"
+          },
+          "example": 357
+        },
+        {
+          "name": "spd",
+          "type": "number",
+          "title": {
+            "en": "km/h",
+            "nl": "km/u"
+          },
+          "example": 238
+        },
+        {
+          "name": "vsi",
+          "type": "number",
+          "title": {
+            "en": "vert.",
+            "nl": "vert."
+          },
+          "example": -12
+        },
+        {
+          "name": "tsecs",
+          "type": "number",
+          "title": {
+            "en": "tracktime",
+            "nl": "tracktijd"
+          },
+          "example": 843
+        },
+        {
+          "name": "gnd",
+          "type": "boolean",
+          "title": {
+            "en": "ground",
+            "nl": "grond"
+          },
+          "example": false
+        },
+        {
+          "name": "mil",
+          "type": "boolean",
+          "title": {
+            "en": "mil",
+            "nl": "mil"
+          },
+          "example": false
+        },
+        {
+          "name": "help",
+          "type": "boolean",
+          "title": {
+            "en": "help",
+            "nl": "help"
+          },
+          "example": false
+        },
+        {
+          "name": "icao",
+          "type": "string",
+          "title": {
+            "en": "icao",
+            "nl": "icao"
+          },
+          "example": "484A92"
+        },
+        {
+          "name": "reg",
+          "type": "string",
+          "title": {
+            "en": "reg",
+            "nl": "reg"
+          },
+          "example": "PH-PXB"
+        },
+        {
+          "name": "call",
+          "type": "string",
+          "title": {
+            "en": "call",
+            "nl": "call"
+          },
+          "example": "ZXP02"
+        },
+        {
+          "name": "mdl",
+          "type": "string",
+          "title": {
+            "en": "model",
+            "nl": "model"
+          },
+          "example": "Eurocopter EC135 P2+"
+        },
+        {
+          "name": "op",
+          "type": "string",
+          "title": {
+            "en": "oprtr",
+            "nl": "oprtr"
+          },
+          "example": "KLPD Police Aviation Service"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "title": {
+            "en": "from",
+            "nl": "van"
+          },
+          "example": "EPWA Warsaw Chopin, Poland"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "title": {
+            "en": "to",
+            "nl": "naar"
+          },
+          "example": "EHAM Amsterdam Airport Schiphol, Netherlands"
+        },
+        {
+          "name": "oc",
+          "type": "string",
+          "title": {
+            "en": "country",
+            "nl": "land"
+          },
+          "example": "Belgium"
+        },
+        {
+          "name": "loc",
+          "type": "string",
+          "title": {
+            "en": "location",
+            "nl": "locatie"
+          },
+          "example": "NL Amsterdam"
+        }
+      ]
+    },
+    {
+      "id": "went_airborne",
+      "title": {
+        "en": "Aircraft went airborne",
+        "nl": "Vliegtuig is opgestegen"
+      },
+      "args": [],
+      "tokens": [
+        {
+          "name": "lon",
+          "type": "number",
+          "title": {
+            "en": "lon",
+            "nl": "lon"
+          },
+          "example": 5.3214
+        },
+        {
+          "name": "lat",
+          "type": "number",
+          "title": {
+            "en": "lat",
+            "nl": "lat"
+          },
+          "example": 52.2289
+        },
+        {
+          "name": "dst",
+          "type": "number",
+          "title": {
+            "en": "dist.",
+            "nl": "afstand"
+          },
+          "example": 14.97
+        },
+        {
+          "name": "brng",
+          "type": "number",
+          "title": {
+            "en": "bearing",
+            "nl": "richting"
+          },
+          "example": 309.4
+        },
+        {
+          "name": "alt",
+          "type": "number",
+          "title": {
+            "en": "alt.",
+            "nl": "hoogte"
+          },
+          "example": 357
+        },
+        {
+          "name": "spd",
+          "type": "number",
+          "title": {
+            "en": "km/h",
+            "nl": "km/u"
+          },
+          "example": 238
+        },
+        {
+          "name": "vsi",
+          "type": "number",
+          "title": {
+            "en": "vert.",
+            "nl": "vert."
+          },
+          "example": -12
+        },
+        {
+          "name": "tsecs",
+          "type": "number",
+          "title": {
+            "en": "tracktime",
+            "nl": "tracktijd"
+          },
+          "example": 843
+        },
+        {
+          "name": "gnd",
+          "type": "boolean",
+          "title": {
+            "en": "ground",
+            "nl": "grond"
+          },
+          "example": false
+        },
+        {
+          "name": "mil",
+          "type": "boolean",
+          "title": {
+            "en": "mil",
+            "nl": "mil"
+          },
+          "example": false
+        },
+        {
+          "name": "help",
+          "type": "boolean",
+          "title": {
+            "en": "help",
+            "nl": "help"
+          },
+          "example": false
+        },
+        {
+          "name": "icao",
+          "type": "string",
+          "title": {
+            "en": "icao",
+            "nl": "icao"
+          },
+          "example": "484A92"
+        },
+        {
+          "name": "reg",
+          "type": "string",
+          "title": {
+            "en": "reg",
+            "nl": "reg"
+          },
+          "example": "PH-PXB"
+        },
+        {
+          "name": "call",
+          "type": "string",
+          "title": {
+            "en": "call",
+            "nl": "call"
+          },
+          "example": "ZXP02"
+        },
+        {
+          "name": "mdl",
+          "type": "string",
+          "title": {
+            "en": "model",
+            "nl": "model"
+          },
+          "example": "Eurocopter EC135 P2+"
+        },
+        {
+          "name": "op",
+          "type": "string",
+          "title": {
+            "en": "oprtr",
+            "nl": "oprtr"
+          },
+          "example": "KLPD Police Aviation Service"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "title": {
+            "en": "from",
+            "nl": "van"
+          },
+          "example": "EPWA Warsaw Chopin, Poland"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "title": {
+            "en": "to",
+            "nl": "naar"
+          },
+          "example": "EHAM Amsterdam Airport Schiphol, Netherlands"
+        },
+        {
+          "name": "oc",
+          "type": "string",
+          "title": {
+            "en": "country",
+            "nl": "land"
+          },
+          "example": "Belgium"
+        },
+        {
+          "name": "loc",
+          "type": "string",
+          "title": {
+            "en": "location",
+            "nl": "locatie"
+          },
+          "example": "NL Amsterdam"
+        }
+      ]
+    },
+    {
+      "id": "just_landed",
+      "title": {
+        "en": "Aircraft just landed",
+        "nl": "Vliegtuig is geland"
+      },
+      "args": [],
+      "tokens": [
+        {
+          "name": "lon",
+          "type": "number",
+          "title": {
+            "en": "lon",
+            "nl": "lon"
+          },
+          "example": 5.3214
+        },
+        {
+          "name": "lat",
+          "type": "number",
+          "title": {
+            "en": "lat",
+            "nl": "lat"
+          },
+          "example": 52.2289
+        },
+        {
+          "name": "dst",
+          "type": "number",
+          "title": {
+            "en": "dist.",
+            "nl": "afstand"
+          },
+          "example": 14.97
+        },
+        {
+          "name": "brng",
+          "type": "number",
+          "title": {
+            "en": "bearing",
+            "nl": "richting"
+          },
+          "example": 309.4
+        },
+        {
+          "name": "alt",
+          "type": "number",
+          "title": {
+            "en": "alt.",
+            "nl": "hoogte"
+          },
+          "example": 357
+        },
+        {
+          "name": "spd",
+          "type": "number",
+          "title": {
+            "en": "km/h",
+            "nl": "km/u"
+          },
+          "example": 238
+        },
+        {
+          "name": "vsi",
+          "type": "number",
+          "title": {
+            "en": "vert.",
+            "nl": "vert."
+          },
+          "example": -12
+        },
+        {
+          "name": "tsecs",
+          "type": "number",
+          "title": {
+            "en": "tracktime",
+            "nl": "tracktijd"
+          },
+          "example": 843
+        },
+        {
+          "name": "gnd",
+          "type": "boolean",
+          "title": {
+            "en": "ground",
+            "nl": "grond"
+          },
+          "example": false
+        },
+        {
+          "name": "mil",
+          "type": "boolean",
+          "title": {
+            "en": "mil",
+            "nl": "mil"
+          },
+          "example": false
+        },
+        {
+          "name": "help",
+          "type": "boolean",
+          "title": {
+            "en": "help",
+            "nl": "help"
+          },
+          "example": false
+        },
+        {
+          "name": "icao",
+          "type": "string",
+          "title": {
+            "en": "icao",
+            "nl": "icao"
+          },
+          "example": "484A92"
+        },
+        {
+          "name": "reg",
+          "type": "string",
+          "title": {
+            "en": "reg",
+            "nl": "reg"
+          },
+          "example": "PH-PXB"
+        },
+        {
+          "name": "call",
+          "type": "string",
+          "title": {
+            "en": "call",
+            "nl": "call"
+          },
+          "example": "ZXP02"
+        },
+        {
+          "name": "mdl",
+          "type": "string",
+          "title": {
+            "en": "model",
+            "nl": "model"
+          },
+          "example": "Eurocopter EC135 P2+"
+        },
+        {
+          "name": "op",
+          "type": "string",
+          "title": {
+            "en": "oprtr",
+            "nl": "oprtr"
+          },
+          "example": "KLPD Police Aviation Service"
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "title": {
+            "en": "from",
+            "nl": "van"
+          },
+          "example": "EPWA Warsaw Chopin, Poland"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "title": {
+            "en": "to",
+            "nl": "naar"
+          },
+          "example": "EHAM Amsterdam Airport Schiphol, Netherlands"
+        },
+        {
+          "name": "oc",
+          "type": "string",
+          "title": {
+            "en": "country",
+            "nl": "land"
+          },
+          "example": "Belgium"
+        },
+        {
+          "name": "loc",
+          "type": "string",
+          "title": {
+            "en": "location",
+            "nl": "locatie"
+          },
+          "example": "NL Amsterdam"
+        }
+      ]
+    }
+  ]
+}
