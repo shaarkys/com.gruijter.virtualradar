@@ -1668,7 +1668,8 @@
         "mdl",
         "dst",
         "alt",
-        "oc"
+        "oc",
+        "api_credits"
       ],
       "capabilitiesOptions": {
         "ac_number": {
@@ -1679,6 +1680,10 @@
         },
         "alt": {
           "preventInsights": true
+        },
+        "api_credits": {
+          "unit": "",
+          "format": "integer"
         }
       },
       "mobile": {
@@ -1705,7 +1710,8 @@
                 "mdl": "./assets/mdl.svg",
                 "dst": "./assets/dst.svg",
                 "alt": "./assets/alt.svg",
-                "oc": "./assets/oc.svg"
+                "oc": "./assets/oc.svg",
+                "api_credits": "./assets/api_credits.svg"
               }
             }
           }
@@ -1734,6 +1740,32 @@
               "hint": {
                 "en": "Some services are open, some require a (free/paid) subscription.",
                 "nl": "Sommige diensten zijn open, sommige hebben een (gratis/betaald) abonnement."
+              },
+              "value": ""
+            },
+            {
+              "id": "username",
+              "type": "text",
+              "label": {
+                "en": "Username (optional)",
+                "nl": "Gebruikersnaam (optioneel)"
+              },
+              "hint": {
+                "en": "Enter your OpenSky username if you have one.",
+                "nl": "Voer je OpenSky gebruikersnaam in als je er een hebt."
+              },
+              "value": ""
+            },
+            {
+              "id": "password",
+              "type": "password",
+              "label": {
+                "en": "Password (optional)",
+                "nl": "Wachtwoord (optioneel)"
+              },
+              "hint": {
+                "en": "Enter your OpenSky password if you have one.",
+                "nl": "Voer je OpenSky wachtwoord in als je er een hebt."
               },
               "value": ""
             }
@@ -1885,7 +1917,8 @@
         "spd",
         "to",
         "dst",
-        "ttime"
+        "ttime",
+        "api_credits"
       ],
       "capabilitiesOptions": {
         "onoff": {
@@ -1900,6 +1933,10 @@
         },
         "dst": {
           "preventInsights": true
+        },
+        "api_credits": {
+          "unit": "",
+          "format": "integer"
         }
       },
       "mobile": {
@@ -1929,7 +1966,8 @@
                 "spd": "./assets/spd.svg",
                 "to": "./assets/to.svg",
                 "dst": "./assets/dst.svg",
-                "ttime": "./assets/ttime.svg"
+                "ttime": "./assets/ttime.svg",
+                "api_credits": "./assets/api_credits.svg"
               }
             }
           }
@@ -1958,6 +1996,32 @@
               "hint": {
                 "en": "Some services are open, some require a (free/paid) subscription.",
                 "nl": "Sommige diensten zijn open, sommige hebben een (gratis/betaald) abonnement."
+              },
+              "value": ""
+            },
+            {
+              "id": "username",
+              "type": "text",
+              "label": {
+                "en": "Username (optional)",
+                "nl": "Gebruikersnaam (optioneel)"
+              },
+              "hint": {
+                "en": "Enter your OpenSky username if you have one.",
+                "nl": "Voer je OpenSky gebruikersnaam in als je er een hebt."
+              },
+              "value": ""
+            },
+            {
+              "id": "password",
+              "type": "password",
+              "label": {
+                "en": "Password (optional)",
+                "nl": "Wachtwoord (optioneel)"
+              },
+              "hint": {
+                "en": "Enter your OpenSky password if you have one.",
+                "nl": "Voer je OpenSky wachtwoord in als je er een hebt."
               },
               "value": ""
             }
@@ -2098,6 +2162,21 @@
       "setable": false,
       "insights": false,
       "icon": "./assets/alt.svg"
+    },
+    "api_credits": {
+      "type": "number",
+      "title": {
+        "en": "API Credits",
+        "nl": "API Kredieten"
+      },
+      "desc": {
+        "en": "Remaining API Credits",
+        "nl": "Resterende API-credits"
+      },
+      "getable": true,
+      "setable": false,
+      "insights": true,
+      "icon": "./assets/api_credits.svg"
     },
     "brng": {
       "type": "string",

@@ -19,15 +19,18 @@
 			</select>
 		</div>
 
-		<!-- <label class="settings-item-description" data-i18n="pair.username">username</label>
-		<div class="settings-itemgroup">
-			<input id="username" type="text" value="">
-		</div> -->
-<!-- 
-		<label class="settings-item-description" id="passwordLabel" data-i18n="pair.password">password</label>
-		<div class="settings-itemgroup">
-			<input id="password" type="text" value="">
-		</div> -->
+        <!-- OpenSky Credentials (Initially Hidden) -->
+        <div id="credentialsContainer" style="display: none;">
+            <label class="settings-item-description" data-i18n="pair.username">Username (optional)</label>
+            <div class="settings-itemgroup">
+                <input id="username" type="text" value="">
+            </div>
+
+            <label class="settings-item-description" data-i18n="pair.password">Password (optional)</label>
+            <div class="settings-itemgroup">
+                <input id="password" type="password" value="">
+            </div>
+        </div>
 
 		<label class="settings-item-description" id="APIKeyLabel" data-i18n="pair.APIKey">key</label>
 		<div class="settings-itemgroup">

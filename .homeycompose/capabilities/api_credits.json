@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "API Credits",
+    "nl": "API Kredieten"
+  },
+  "desc": {
+    "en": "Remaining API Credits",
+    "nl": "Resterende API-credits"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": true,
+  "icon": "./assets/api_credits.svg"
+}

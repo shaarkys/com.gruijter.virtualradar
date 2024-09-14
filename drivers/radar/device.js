@@ -64,6 +64,11 @@ class RadarDevice extends Homey.Device {
     this.log(`device init ${this.getClass()} ${this.getName()}`);
     clearInterval(this.intervalIdDevicePoll); // if polling, stop polling
 
+    // Check and add the api_credits capability dynamically
+    if (!this.hasCapability("api_credits")) {
+      await this.addCapability("api_credits");
+    }
+
     this.radarServices = {
       openSky: {
         name: "openSky",
@@ -83,6 +88,12 @@ class RadarDevice extends Homey.Device {
     this.flowCards = {};
     this.registerFlowCards();
 
+    // Set up callback to receive API credits
+    this.radar.setCreditsUpdateCallback(this.updateApiCredits.bind(this));
+
+    // Initialize api_credits capability
+    this.setCapability("api_credits", 0);
+
     this.radarServices.openSky.capabilities.forEach((capability) => {
       this.registerCapabilityListener(capability, async (value) => {
         this.log(`Capability ${capability} changed to ${value}`);
@@ -98,6 +109,13 @@ class RadarDevice extends Homey.Device {
         this.log("intervalIdDevicePoll error", error);
       }
     }, 1000 * this.getSetting("pollingInterval"));
+  }
+
+  // Callback to update API credits
+  updateApiCredits(credits) {
+    this.setCapabilityValue("api_credits", credits).catch((error) => {
+      this.log("Error setting api_credits:", error);
+    });
   }
 
   // this method is called when the Device is added
@@ -213,6 +231,26 @@ class RadarDevice extends Homey.Device {
       return;
     } catch (error) {
       this.error(error);
+
+      if (error.includes("Rate limit exceeded")) {
+        // Notify the user about the rate limit
+        await this.homey.notifications
+          .createNotification({
+            excerpt: "OpenSky API rate limit exceeded. Please wait before making more requests.",
+            state: "warning",
+          })
+          .catch((err) => {
+            this.log("Error sending notification:", err);
+          });
+
+        // Implement cooldown
+        if (this.radar.retryAfterSeconds) {
+          this.log(`Retrying scan after ${this.radar.retryAfterSeconds} seconds due to rate limiting.`);
+          setTimeout(() => {
+            this.scan();
+          }, this.radar.retryAfterSeconds * 1000);
+        }
+      }
     }
   }
 

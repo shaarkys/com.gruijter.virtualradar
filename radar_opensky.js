@@ -78,8 +78,19 @@ class VirtualRadar {
     this.lastScan = 0; // int Unix timestamp (seconds) for the last radar update.
     this.center = new GeoPoint(this.lat, this.lon);
     this.timeout = 20000; // int Timeout in ms for the http service call
+    this.username = settings.username || null;
+    this.password = settings.password || null;
+    this.apiCredits = null;  // Initialize apiCredits
+    this.retryAfterSeconds = null;  // Initialize retryAfterSeconds
     // this.fa = new FlightAware();
+    this.onCreditsUpdate = null; // Callback for credits update
+    
   }
+
+    // Method to set the callback
+    setCreditsUpdateCallback(callback) {
+      this.onCreditsUpdate = callback;
+    }
 
   // returns an array of aircraft states that are in range
   async getAcInRange() {
@@ -314,54 +325,100 @@ class VirtualRadar {
 
   async _makeRequest(options) {
     try {
-      const result = await this._makeHttpsRequest(options);
-      if (result.statusCode !== 200 || !result.headers["content-type"].includes("application/json")) {
-        throw Error(`API error : ${result.statusCode}`);
+      const res = await this._makeHttpsRequest(options);
+      if (res.statusCode !== 200 || !res.headers['content-type'].includes('application/json')) {
+        throw new Error(`Service: ${res.statusCode}`);
       }
-      const jsonData = JSON.parse(result.body);
-      // this.log(util.inspect(jsonData, { depth: null, colors: true }));
+      const jsonData = JSON.parse(res.body);
+    // this.log(util.inspect(jsonData, { depth: null, colors: true }));
       // if (jsonData.time === undefined) {
       // 	throw Error('Invalid response from API');
       // }
+  
       if (!jsonData.states) {
         jsonData.states = [];
       }
+  
       this.lastScan = jsonData.time || Date.now();
-      return Promise.resolve(jsonData);
+      // Store remaining credits
+      const remainingCredits = this.apiCredits !== null ? this.apiCredits : 'N/A';
+  
+      // Assuming you have a way to update device capabilities, you might emit an event or call a callback
+      // For example:
+      if (this.onCreditsUpdate) {
+        this.onCreditsUpdate(remainingCredits);
+      }
+  
+      return jsonData;
     } catch (error) {
+      if (error.message.startsWith('Rate limit exceeded')) {
+        // Handle rate limit exceeded
+        // Optionally, implement a retry mechanism after `retryAfterSeconds`
+        this.log(error.message);
+      }
       return Promise.reject(error.message);
     }
-  }
+  } 
 
   _makeHttpsRequest(options, postData, timeout) {
     return new Promise((resolve, reject) => {
-      const opts = options;
+      const opts = { ...options };  // Clone the options to avoid mutation
       opts.timeout = timeout || this.timeout;
+  
+      // Add authentication if username and password are provided
+      if (this.username && this.password) {
+        const auth = `${this.username}:${this.password}`;
+        const base64Auth = Buffer.from(auth).toString('base64');
+        opts.headers['Authorization'] = `Basic ${base64Auth}`;
+      }
+  
       const req = https.request(opts, (res) => {
-        let resBody = "";
-        res.on("data", (chunk) => {
+        let resBody = '';
+        res.on('data', (chunk) => {
           resBody += chunk;
         });
-        res.once("end", () => {
+        res.once('end', () => {
           if (!res.complete) {
-            this.error("The connection was terminated while the message was still being sent");
-            return reject(Error("The connection was terminated while the message was still being sent"));
+            this.error('The connection was terminated while the message was still being sent');
+            return reject(new Error('The connection was terminated while the message was still being sent'));
           }
+  
+          // Extract rate limit headers
+          const rateLimitRemaining = res.headers['x-rate-limit-remaining'];
+          const rateLimitRetryAfter = res.headers['x-rate-limit-retry-after-seconds'];
+  
+          if (rateLimitRemaining !== undefined) {
+            this.apiCredits = parseInt(rateLimitRemaining, 10);
+          }
+  
+          if (rateLimitRetryAfter !== undefined) {
+            this.retryAfterSeconds = parseInt(rateLimitRetryAfter, 10);
+          }
+  
           res.body = resBody;
+          if (res.statusCode === 429) {
+            const errorMessage = `Rate limit exceeded. Retry after ${this.retryAfterSeconds} seconds.`;
+            this.error(errorMessage);
+            return reject(new Error(errorMessage));
+          }
+  
           return resolve(res); // resolve the request
         });
       });
-      req.on("error", (e) => {
+  
+      req.on('error', (e) => {
         req.destroy();
         return reject(e);
       });
-      req.on("timeout", () => {
+      req.on('timeout', () => {
         req.destroy();
+        return reject(new Error('Request timed out'));
       });
       // req.write(postData);
-      req.end(postData || "");
+      req.end(postData || '');
     });
   }
+  
 }
 
 module.exports = VirtualRadar;

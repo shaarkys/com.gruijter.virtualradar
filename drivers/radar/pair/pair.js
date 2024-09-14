@@ -21,6 +21,17 @@ $('#APIKey').hide();
 $('#APIKeyLabel').hide();
 
 function radarSelected() {
+
+	if ($('#radarSelection').val() === 'openSky') {
+        // Show credentials fields for OpenSky
+        $('#credentialsContainer').show();
+    } else {
+        // Hide credentials fields for other radars
+        $('#credentialsContainer').hide();
+        $('#username').val('');
+        $('#password').val('');
+    }
+
 	if ($('#radarSelection').val() === 'openSky') {
 		$('#APIKey').prop('disabled', true);
 		$('#APIKey').hide();
@@ -31,6 +42,12 @@ function radarSelected() {
 		$('#APIKeyLabel').show();
 	}
 }
+
+// Call radarSelected() when the document is ready
+$(document).ready(function() {
+	radarSelected();
+  });
+  
 
 function testSettings() {
 	const data = {

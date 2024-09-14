@@ -16,7 +16,8 @@
     "spd",
     "to",
     "dst",
-    "ttime"
+    "ttime",
+    "api_credits"
   ],
   "capabilitiesOptions": {
     "onoff": {
@@ -31,6 +32,10 @@
     },
     "dst": {
       "preventInsights": true
+    },
+    "api_credits": {
+      "unit": "",
+      "format": "integer"
     }
   },
   "mobile": {
@@ -50,7 +55,8 @@
           "spd",
           "to",
           "dst",
-          "ttime"
+          "ttime",
+          "api_credits"
         ],
         "options": {
           "icons": {
@@ -60,7 +66,8 @@
             "spd": "./assets/spd.svg",
             "to": "./assets/to.svg",
             "dst": "./assets/dst.svg",
-            "ttime": "./assets/ttime.svg"
+            "ttime": "./assets/ttime.svg",
+            "api_credits": "./assets/api_credits.svg"
           }
         }
       }
@@ -89,6 +96,32 @@
           "hint": {
             "en": "Some services are open, some require a (free/paid) subscription.",
             "nl": "Sommige diensten zijn open, sommige hebben een (gratis/betaald) abonnement."
+          },
+          "value": ""
+        },
+        {
+          "id": "username",
+          "type": "text",
+          "label": {
+            "en": "Username (optional)",
+            "nl": "Gebruikersnaam (optioneel)"
+          },
+          "hint": {
+            "en": "Enter your OpenSky username if you have one.",
+            "nl": "Voer je OpenSky gebruikersnaam in als je er een hebt."
+          },
+          "value": ""
+        },
+        {
+          "id": "password",
+          "type": "password",
+          "label": {
+            "en": "Password (optional)",
+            "nl": "Wachtwoord (optioneel)"
+          },
+          "hint": {
+            "en": "Enter your OpenSky password if you have one.",
+            "nl": "Voer je OpenSky wachtwoord in als je er een hebt."
           },
           "value": ""
         }
