@@ -6,7 +6,7 @@
     "nl": "Virtuele Radar"
   },
   "brandColor": "#1d7a36",
-  "version": "3.2.1",
+  "version": "3.2.2",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "description": {
@@ -1700,7 +1700,8 @@
               "mdl",
               "dst",
               "alt",
-              "oc"
+              "oc",
+              "api_credits"
             ],
             "options": {
               "icons": {
@@ -1956,7 +1957,8 @@
               "spd",
               "to",
               "dst",
-              "ttime"
+              "ttime",
+              "api_credits"
             ],
             "options": {
               "icons": {

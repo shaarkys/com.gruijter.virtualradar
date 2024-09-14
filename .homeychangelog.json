@@ -4,5 +4,8 @@
   },
   "3.2.1": {
     "en": "SDK3 rewrite, some additional minor modification"
+  },
+  "3.2.2": {
+    "en": "Added username/password + API counter for the OpenSky"
   }
 }
