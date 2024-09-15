@@ -32,12 +32,12 @@ class captureLogs {
 		this.logLength = opts.length || 50;
 		this.logFile = `/userdata/${this.logName}.json`;
 		this.logArray = [];
+		this.getLogs();
 		this.captureStdOut();
 		this.captureStdErr();
-		this.readLogs();
 	}
 
-	readLogs() {
+	getLogs() {
 		try {
 			const log = fs.readFileSync(this.logFile, 'utf8');
 			this.logArray = JSON.parse(log);
