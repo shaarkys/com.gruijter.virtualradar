@@ -33,12 +33,12 @@ class RadarDriver extends Homey.Driver {
     this.radarServices = {
       openSky: {
         name: "openSky",
-        capabilities: ["ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: false,
       },
       adsbExchangeFeeder: {
         name: "adsbExchangeFeeder",
-        capabilities: ["ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: true,
       },
       // adsbExchangePaid: {
@@ -72,6 +72,9 @@ class RadarDriver extends Homey.Driver {
             username: data.username || '',
             password: data.password || '',
             APIKey: data.APIKey,
+            fallbackOwnData: data.fallbackOwnData || false,
+            feederSerial: data.feederSerial || '', 
+            failoverToOwnData: data.failoverToOwnData || false,
           },
           capabilities: this.radarServices[service].capabilities,
         };

@@ -64,6 +64,17 @@ class RadarDevice extends Homey.Device {
     this.log(`device init ${this.getClass()} ${this.getName()}`);
     clearInterval(this.intervalIdDevicePoll); // if polling, stop polling
 
+    if (this.hasCapability("ac_number") === true) {
+      await this.removeCapability("ac_number");
+      }
+      
+    // maintenance, removing old and add new capabilities
+    if (this.hasCapability("measure_ac_number") === false) {
+      await this.addCapability("measure_ac_number");
+    }
+
+
+
     // Check and add the api_credits capability dynamically
     if (!this.hasCapability("api_credits")) {
       await this.addCapability("api_credits");
@@ -72,12 +83,12 @@ class RadarDevice extends Homey.Device {
     this.radarServices = {
       openSky: {
         name: "openSky",
-        capabilities: ["ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: false,
       },
       adsbExchangeFeeder: {
         name: "adsbExchangeFeeder",
-        capabilities: ["ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: true,
       },
     };
@@ -165,9 +176,8 @@ class RadarDevice extends Homey.Device {
   async scan() {
     try {
       const acArray = await this.radar.getAcInRange();
-
       // Combine multiple filter conditions to avoid multiple iterations
-      const newAcList = acArray.filter((ac) => {
+      let newAcList = acArray.filter((ac) => {
         return (
           (!this.settings.onlyGnd || ac.gnd) && // on_ground
           (!this.settings.onlyAir || !ac.gnd) && // not on_ground
@@ -175,6 +185,24 @@ class RadarDevice extends Homey.Device {
           (this.settings.sqk === "" || this.settings.sqk === ac.sqk)
         ); // squawk filter
       });
+
+      // **Enforce Radar Range Only When Using Own Data**
+      if (this.settings.fallbackOwnData && this.settings.feederSerial) {
+        // Ensure that 'this.radar.range' is defined and is a number
+        if (typeof this.radar.range !== "number") {
+          this.log(`Error: radar.range is not a number. Received: ${this.radar.range}`);
+          return;
+        }
+
+        // Filter aircraft within the defined range (meters)
+        const filteredAcList = newAcList.filter((ac) => ac.dst <= this.radar.range);
+        newAcList = filteredAcList; // Update the list with filtered aircraft
+
+        if (filteredAcList.length > 0) {
+          // **Log the number of aircraft within range**
+          this.log(`Using own feeder data - ${filteredAcList.length} aircraft within ${this.radar.range} meters.`);
+        }
+      }
 
       // Iterate through new aircrafts in airspace
       newAcList.forEach((ac, index) => {
@@ -206,7 +234,7 @@ class RadarDevice extends Homey.Device {
       const nearestAc = newAcList.reduce((acc, current) => (current.dst <= acc.dst ? current : acc), newAcList[0]);
 
       // Set capabilities based on nearest aircraft
-      this.setCapability("ac_number", newAcList.length || 0);
+      this.setCapability("measure_ac_number", newAcList.length || 0);
       if (nearestAc) {
         const dist = Math.round(nearestAc.dst / 100) / 10;
         const alt = Math.round(nearestAc.gAlt || nearestAc.bAlt || 0);
@@ -232,7 +260,7 @@ class RadarDevice extends Homey.Device {
     } catch (error) {
       this.error(error);
 
-      if (error.includes("Rate limit exceeded")) {
+      if (error.message?.includes("Rate limit exceeded")) {
         // Notify the user about the rate limit
         await this.homey.notifications
           .createNotification({

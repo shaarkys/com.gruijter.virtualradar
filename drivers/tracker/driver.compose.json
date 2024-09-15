@@ -212,6 +212,54 @@
           "value": 180
         }
       ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Feeder Data Settings",
+        "nl": "Eigen gegevens instellingen"
+      },
+      "children": [
+        {
+          "id": "fallbackOwnData",
+          "type": "checkbox",
+          "label": {
+            "en": "Prefer ADS-B feeder",
+            "nl": "Geef de voorkeur aan ADS-B feeder"
+          },
+          "value": false,
+          "hint": {
+            "en": "Prefer own data from ADS-B feeder (doesn't require API credit)",
+            "nl": "Geef de voorkeur aan eigen gegevens van ADS-B feeder (vereist geen API-krediet)"
+          }
+        },
+        {
+          "id": "failoverToOwnData",
+          "type": "checkbox",
+          "label": {
+            "en": "Failback to ADS-B feeder (no API credit)",
+            "nl": "Failback naar ADS-B feeder (geen API-krediet)"
+          },
+          "value": false,
+          "hint": {
+            "en": "In case of insuficient API credit, failback to own ADS-B feeder",
+            "nl": "Bij onvoldoende API-krediet, failback naar eigen ADS-B feeder"
+          }
+        },
+        {
+          "id": "feederSerial",
+          "type": "text",
+          "label": {
+            "en": "ADS-B feeder Serial Number",
+            "nl": "ADS-B feeder serienummer"
+          },
+          "value": "",
+          "hint": {
+            "en": "Enter the feeder serial number to retrieve your own data.",
+            "nl": "Voer het feeder serienummer in om uw eigen gegevens op te halen."
+          }
+        }
+      ]
     }
   ]
 }

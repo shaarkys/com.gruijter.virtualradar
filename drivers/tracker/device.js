@@ -124,12 +124,12 @@ class Tracker extends Homey.Device {
     this.radarServices = {
       openSky: {
         name: "openSky",
-        capabilities: ["ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: false,
       },
       adsbExchangeFeeder: {
         name: "adsbExchangeFeeder",
-        capabilities: ["ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: true,
       },
     };

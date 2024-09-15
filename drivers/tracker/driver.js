@@ -73,6 +73,9 @@ class TrackerDriver extends Homey.Driver {
             username: data.username || '',
             password: data.password || '',
             APIKey: data.APIKey,
+            fallbackOwnData: data.fallbackOwnData || false,
+            feederSerial: data.feederSerial || '', 
+            failoverToOwnData: data.failoverToOwnData || false,
           },
           capabilities: this.radarServices[service].capabilities,
         };

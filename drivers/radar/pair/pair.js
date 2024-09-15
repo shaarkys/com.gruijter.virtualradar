@@ -54,6 +54,8 @@ function testSettings() {
 		radarSelection: $('#radarSelection').val(),
 		username: $('#username').val(),
 		password: $('#password').val(),
+		fallbackOwnData: $('#fallbackOwnData').is(':checked'),
+        feederSerial: $('#feederSerial').val(),
 		APIKey: $('#APIKey').val(),
 	};
 	// Continue to back-end, pass along data

@@ -80,60 +80,81 @@ class VirtualRadar {
     this.timeout = 20000; // int Timeout in ms for the http service call
     this.username = settings.username || null;
     this.password = settings.password || null;
-    this.apiCredits = null;  // Initialize apiCredits
-    this.retryAfterSeconds = null;  // Initialize retryAfterSeconds
+    this.apiCredits = null; // Initialize apiCredits
+    this.retryAfterSeconds = null; // Initialize retryAfterSeconds
     // this.fa = new FlightAware();
     this.onCreditsUpdate = null; // Callback for credits update
-    
+    this.fallbackOwnData = settings.fallbackOwnData || false;
+    this.feederSerial = settings.feederSerial || null;
+    this.failoverToOwnData = settings.failoverToOwnData || false;
   }
 
-    // Method to set the callback
-    setCreditsUpdateCallback(callback) {
-      this.onCreditsUpdate = callback;
-    }
+  // Method to set the callback
+  setCreditsUpdateCallback(callback) {
+    this.onCreditsUpdate = callback;
+  }
 
   // returns an array of aircraft states that are in range
   async getAcInRange() {
     try {
-      const bounds = this._getBounds();
-      const query = {
-        lamin: bounds.lamin, //	lower bound for the latitude in decimal degrees
-        lomin: bounds.lomin, //	lower bound for the longitude in decimal degrees
-        lamax: bounds.lamax, //	upper bound for the latitude in decimal degrees
-        lomax: bounds.lomax, //	upper bound for the longitude in decimal degrees
-        extended: true,
-      };
+      let path;
+      let query;
+
+      if (this.fallbackOwnData && !this.feederSerial) {
+        console.warn("Feeder Serial Number is not provided. Falling back to general data.");
+        this.fallbackOwnData = false; // Disable fallback to prevent future issues
+      }
+
+      if (this.fallbackOwnData && this.feederSerial) {
+        // Use own data endpoint
+        path = `/api/states/own?${qs.stringify({ serials: this.feederSerial })}`;
+      } else {
+        // Use general endpoint
+        const bounds = this._getBounds();
+        query = {
+          lamin: bounds.lamin, //	lower bound for the latitude in decimal degrees
+          lomin: bounds.lomin, //	lower bound for the longitude in decimal degrees
+          lamax: bounds.lamax, //	upper bound for the latitude in decimal degrees
+          lomax: bounds.lomax, //	upper bound for the longitude in decimal degrees
+          extended: true,
+        };
+        path = `/api/states/all?${qs.stringify(query)}`;
+      }
+
       const headers = {
         "cache-control": "no-cache",
         Connection: "Keep-Alive",
       };
+
       const options = {
         hostname: "opensky-network.org",
-        path: `/api/states/all?${qs.stringify(query)}`,
+        path: path,
         headers,
         method: "GET",
       };
+
       const jsonData = await this._makeRequest(options);
       if (!jsonData.states) {
         jsonData.states = [];
       }
 
       // Fetch and enrich aircraft data
-      const acList = jsonData.states.map(async (state) => {
-        let ac = await this._getAcNormal(state); // normalize the data
-        ac = await this._getRoute(ac); // try to enrich with route information
-        ac = await this._getMeta(ac); // try to enrich with metadata (operator, model, etc.)
+      const acList = await Promise.all(
+        jsonData.states.map(async (state) => {
+          let ac = await this._getAcNormal(state); // normalize the data
+          ac = await this._getRoute(ac); // try to enrich with route information
+          ac = await this._getMeta(ac); // try to enrich with metadata (operator, model, etc.)
 
-        // Ensure fallbacks for missing data
-        ac.from = ac.from || "N/A";
-        ac.to = ac.to || "N/A";
-        ac.op = ac.op || "N/A";
-        ac.mdl = ac.mdl || "N/A";
+          // Ensure fallbacks for missing data
+          ac.from = ac.from || "N/A";
+          ac.to = ac.to || "N/A";
+          ac.op = ac.op || "N/A";
+          ac.mdl = ac.mdl || "N/A";
 
-        return ac;
-      });
-
-      return Promise.all(acList);
+          return ac;
+        })
+      );
+        return acList;
     } catch (error) {
       return Promise.reject(error);
     }
@@ -142,30 +163,46 @@ class VirtualRadar {
   // returns the state of a specific aircraft
   async getAc(ACOpts) {
     try {
-      const query = {};
-      if (ACOpts.ico !== "") {
-        query.icao24 = ACOpts.ico.toLowerCase();
+      let path;
+      let query = {};
+
+      if (this.fallbackOwnData && this.feederSerial) {
+        // Use own data endpoint
+        query.serials = this.feederSerial;
+        if (ACOpts.ico !== "") {
+          query.icao24 = ACOpts.ico.toLowerCase();
+        }
+        path = `/api/states/own?${qs.stringify(query)}`;
+      } else {
+        // Use general endpoint
+        if (ACOpts.ico !== "") {
+          query.icao24 = ACOpts.ico.toLowerCase();
+        }
+        if (ACOpts.reg !== "") {
+          query.reg = ACOpts.reg.toLowerCase();
+        }
+        if (ACOpts.call !== "") {
+          query.callsign = ACOpts.call.toLowerCase();
+        }
+        path = `/api/states/all?${qs.stringify(query)}`;
       }
-      if (ACOpts.reg !== "") {
-        query.reg = ACOpts.reg.toLowerCase();
-      }
-      if (ACOpts.call !== "") {
-        query.callsign = ACOpts.call.toLowerCase();
-      }
+
       const headers = {
         "cache-control": "no-cache",
       };
+
       const options = {
         hostname: "opensky-network.org",
-        path: `/api/states/all?${qs.stringify(query)}`,
+        path: path,
         headers,
         method: "GET",
       };
+
       const jsonData = await this._makeRequest(options);
       if (!jsonData.states) {
         jsonData.states = [];
       }
-      // convert state to ac-data
+
       const acList = jsonData.states.map(async (state) => Promise.resolve(await this._getAcNormal(state)));
       return Promise.all(acList);
     } catch (error) {
@@ -326,93 +363,97 @@ class VirtualRadar {
   async _makeRequest(options) {
     try {
       const res = await this._makeHttpsRequest(options);
-      if (res.statusCode !== 200 || !res.headers['content-type'].includes('application/json')) {
+
+      if (res.statusCode === 403) {
+        throw new Error("Authentication failed. Please check your username and password.");
+      }
+
+      if (res.statusCode !== 200 || !res.headers["content-type"].includes("application/json")) {
         throw new Error(`Service: ${res.statusCode}`);
       }
       const jsonData = JSON.parse(res.body);
-    // this.log(util.inspect(jsonData, { depth: null, colors: true }));
+      // this.log(util.inspect(jsonData, { depth: null, colors: true }));
       // if (jsonData.time === undefined) {
       // 	throw Error('Invalid response from API');
       // }
-  
+
       if (!jsonData.states) {
         jsonData.states = [];
       }
-  
+
       this.lastScan = jsonData.time || Date.now();
       // Store remaining credits
-      const remainingCredits = this.apiCredits !== null ? this.apiCredits : 'N/A';
-  
+      const remainingCredits = this.apiCredits !== null ? this.apiCredits : 0;
+
       // Assuming you have a way to update device capabilities, you might emit an event or call a callback
       // For example:
       if (this.onCreditsUpdate) {
         this.onCreditsUpdate(remainingCredits);
       }
-  
+
       return jsonData;
     } catch (error) {
-      return Promise.reject(error.message);  
+      return Promise.reject(error.message);
     }
-  } 
+  }
 
   _makeHttpsRequest(options, postData, timeout) {
     return new Promise((resolve, reject) => {
-      const opts = { ...options };  // Clone the options to avoid mutation
+      const opts = { ...options }; // Clone the options to avoid mutation
       opts.timeout = timeout || this.timeout;
-  
+
       // Add authentication if username and password are provided
       if (this.username && this.password) {
         const auth = `${this.username}:${this.password}`;
-        const base64Auth = Buffer.from(auth).toString('base64');
-        opts.headers['Authorization'] = `Basic ${base64Auth}`;
+        const base64Auth = Buffer.from(auth).toString("base64");
+        opts.headers["Authorization"] = `Basic ${base64Auth}`;
       }
-  
+
       const req = https.request(opts, (res) => {
-        let resBody = '';
-        res.on('data', (chunk) => {
+        let resBody = "";
+        res.on("data", (chunk) => {
           resBody += chunk;
         });
-        res.once('end', () => {
+        res.once("end", () => {
           if (!res.complete) {
-            error('The connection was terminated while the message was still being sent');
-            return reject(new Error('The connection was terminated while the message was still being sent'));
+            error("The connection was terminated while the message was still being sent");
+            return reject(new Error("The connection was terminated while the message was still being sent"));
           }
-  
+
           // Extract rate limit headers
-          const rateLimitRemaining = res.headers['x-rate-limit-remaining'];
-          const rateLimitRetryAfter = res.headers['x-rate-limit-retry-after-seconds'];
-  
+          const rateLimitRemaining = res.headers["x-rate-limit-remaining"];
+          const rateLimitRetryAfter = res.headers["x-rate-limit-retry-after-seconds"];
+
           if (rateLimitRemaining !== undefined) {
             this.apiCredits = parseInt(rateLimitRemaining, 10);
           }
-  
+
           if (rateLimitRetryAfter !== undefined) {
             this.retryAfterSeconds = parseInt(rateLimitRetryAfter, 10);
           }
-  
+
           res.body = resBody;
           if (res.statusCode === 429) {
             const errorMessage = `Rate limit exceeded. Retry after ${this.retryAfterSeconds} seconds.`;
             return reject(Error(errorMessage));
           }
-  
+
           return resolve(res); // resolve the request
         });
       });
-  
-      req.on('error', (e) => {
+
+      req.on("error", (e) => {
         req.destroy();
         return reject(e);
       });
-      req.on('timeout', () => {
+      req.on("timeout", () => {
         req.destroy();
-        return reject(new Error('Request timed out'));
+        return reject(new Error("Request timed out"));
       });
       // req.write(postData);
-      req.end(postData || '');
+      req.end(postData || "");
     });
   }
-  
 }
 
 module.exports = VirtualRadar;

@@ -1,10 +1,12 @@
 <!doctype html>
 <html>
+
 <head>
     <link rel="stylesheet" type="text/css" href="styles.css" />
     <script type="text/javascript" src="/manager/webserver/assets/js/jquery.js"></script>
     <script type="text/javascript" src="pair.js" data-origin="pair"></script>
 </head>
+
 <body>
     <div class="setting">
         <p data-i18n="pair.instructions" class="instructions">Instructions</p>
@@ -31,8 +33,22 @@
             <div class="settings-itemgroup">
                 <input id="password" type="password" value="">
             </div>
-        </div>
 
+            <!-- Fallback to own data -->
+            <label class="settings-item-description" data-i18n="pair.fallbackOwnData">Fallback to own data</label>
+            <div class="settings-itemgroup">
+                <input id="fallbackOwnData" type="checkbox" />
+            </div>
+
+            <!-- Feeder serial number -->
+            <label class="settings-item-description" data-i18n="pair.feederSerial">Feeder Serial Number
+                (optional)</label>
+            <div class="settings-itemgroup">
+                <input id="feederSerial" type="text" value="">
+            </div>
+
+        </div>
+        
         <!-- API Key Field -->
         <label class="settings-item-description" id="APIKeyLabel" data-i18n="pair.APIKey">key</label>
         <div class="settings-itemgroup">
@@ -44,4 +60,5 @@
         <button id="runTest" class="btn" onclick="testSettings()" data-i18n="pair.testSettings">Start Test</button>
     </div>
 </body>
+
 </html>
