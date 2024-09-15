@@ -7,5 +7,8 @@
   },
   "3.2.2": {
     "en": "Added username/password + API counter for the OpenSky"
+  },
+  "3.2.3": {
+    "en": "Fix crashing for OpenSky"
   }
 }
