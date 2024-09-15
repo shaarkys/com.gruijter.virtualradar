@@ -351,12 +351,7 @@ class VirtualRadar {
   
       return jsonData;
     } catch (error) {
-      if (error.message.startsWith('Rate limit exceeded')) {
-        // Handle rate limit exceeded
-        // Optionally, implement a retry mechanism after `retryAfterSeconds`
-        this.log(error.message);
-      }
-      return Promise.reject(error.message);
+      return Promise.reject(error.message);  
     }
   } 
 
@@ -379,7 +374,7 @@ class VirtualRadar {
         });
         res.once('end', () => {
           if (!res.complete) {
-            this.error('The connection was terminated while the message was still being sent');
+            error('The connection was terminated while the message was still being sent');
             return reject(new Error('The connection was terminated while the message was still being sent'));
           }
   
@@ -398,8 +393,7 @@ class VirtualRadar {
           res.body = resBody;
           if (res.statusCode === 429) {
             const errorMessage = `Rate limit exceeded. Retry after ${this.retryAfterSeconds} seconds.`;
-            this.error(errorMessage);
-            return reject(new Error(errorMessage));
+            return reject(Error(errorMessage));
           }
   
           return resolve(res); // resolve the request
