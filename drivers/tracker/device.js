@@ -164,10 +164,37 @@ class Tracker extends Homey.Device {
   }
 
   // Callback to update API credits
+
   updateApiCredits(credits) {
     this.setCapabilityValue("api_credits", credits).catch((error) => {
       this.log("Error setting api_credits:", error);
     });
+
+    // Activate failover if API credits are depleted
+    if (credits <= 0 && this.settings.failoverToOwnData && this.settings.feederSerial) {
+      // Notify the user about failover activation
+      this.homey.notifications
+        .createNotification({
+          excerpt: "OpenSky API credits depleted. Switching to own feeder data.",
+          state: "warning",
+        })
+        .catch((err) => {
+          this.log("Error sending notification:", err);
+        });
+    }
+
+    // Deactivate failover if API credits are restored
+    if (credits > 0 && this.settings.failoverToOwnData && this.settings.feederSerial) {
+      // Notify the user about failover deactivation
+      this.homey.notifications
+        .createNotification({
+          excerpt: "OpenSky API credits restored. Switching back to OpenSky API.",
+          state: "ok",
+        })
+        .catch((err) => {
+          this.log("Error sending notification:", err);
+        });
+    }
   }
 
   // this method is called when the Device is added
@@ -301,6 +328,11 @@ class Tracker extends Homey.Device {
           setTimeout(() => {
             this.scan();
           }, this.radar.retryAfterSeconds * 1000);
+        }
+        // Implement failover to own feeder data if enabled and API credits are depleted
+        if (this.settings.failoverToOwnData && this.settings.feederSerial && this.radar.apiCredits <= 0) {
+          // No additional flags, rely on getAcInRange to use own feeder data
+          this.log("Failover to own feeder data activated due to API rate limit exceeded.");
         }
       }
     }

@@ -177,9 +177,9 @@
             "nl": "Scan interval (seconden)"
           },
           "attr": {
-            "min": 15
+            "min": 20
           },
-          "value": 20
+          "value": 30
         }
       ]
     },
@@ -269,7 +269,7 @@
           "id": "failoverToOwnData",
           "type": "checkbox",
           "label": {
-            "en": "Failback to ADS-B feeder (no API credit)",
+            "en": "Failback to ADS-B feeder (in case of no API credit)",
             "nl": "Failback naar ADS-B feeder (geen API-krediet)"
           },
           "value": false,

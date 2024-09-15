@@ -104,8 +104,8 @@ class VirtualRadar {
         console.warn("Feeder Serial Number is not provided. Falling back to general data.");
         this.fallbackOwnData = false; // Disable fallback to prevent future issues
       }
-
-      if (this.fallbackOwnData && this.feederSerial) {
+      // Use own data endpoint only if failoverToOwnData is enabled and apiCredits are depleted
+      if ((this.fallbackOwnData && this.feederSerial) || (this.failoverToOwnData && this.feederSerial && this.remainingCredits <= 0)) {
         // Use own data endpoint
         path = `/api/states/own?${qs.stringify({ serials: this.feederSerial })}`;
       } else {
@@ -154,7 +154,7 @@ class VirtualRadar {
           return ac;
         })
       );
-        return acList;
+      return acList;
     } catch (error) {
       return Promise.reject(error);
     }
@@ -386,7 +386,6 @@ class VirtualRadar {
       const remainingCredits = this.apiCredits !== null ? this.apiCredits : 0;
 
       // Assuming you have a way to update device capabilities, you might emit an event or call a callback
-      // For example:
       if (this.onCreditsUpdate) {
         this.onCreditsUpdate(remainingCredits);
       }
