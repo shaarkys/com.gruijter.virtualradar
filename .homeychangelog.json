@@ -10,5 +10,8 @@
   },
   "3.2.3": {
     "en": "Fix crashing for OpenSky"
+  },
+  "3.2.4": {
+    "en": "Fix GETLOGs on the app setting page"
   }
 }
