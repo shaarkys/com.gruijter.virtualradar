@@ -105,7 +105,11 @@ class VirtualRadar {
         this.fallbackOwnData = false; // Disable fallback to prevent future issues
       }
       // Use own data endpoint only if failoverToOwnData is enabled and apiCredits are depleted
-      if ((this.fallbackOwnData && this.feederSerial) || (this.failoverToOwnData && this.feederSerial && this.remainingCredits <= 0)) {
+      if (
+        (this.fallbackOwnData && this.feederSerial) ||
+        (this.failoverToOwnData && this.feederSerial && this.apiCredits !== null && this.apiCredits <= 0)
+      ) {
+        //console.log("Failover to own data activated.");
         // Use own data endpoint
         path = `/api/states/own?${qs.stringify({ serials: this.feederSerial })}`;
       } else {
@@ -139,7 +143,7 @@ class VirtualRadar {
       }
 
       // Fetch and enrich aircraft data
-      const acList = await Promise.all(
+      let acList = await Promise.all(
         jsonData.states.map(async (state) => {
           let ac = await this._getAcNormal(state); // normalize the data
           ac = await this._getRoute(ac); // try to enrich with route information
@@ -154,6 +158,16 @@ class VirtualRadar {
           return ac;
         })
       );
+
+      // **Implement Distance Filtering Only for Own Feeder Data**
+    if (
+      (this.fallbackOwnData && this.feederSerial) ||
+      (this.failoverToOwnData && this.feederSerial && this.apiCredits !== null && this.apiCredits <= 0)
+    ) {
+      acList = acList.filter(ac => ac.dst <= this.range);
+      //console.log(`Filtered ${acList.length} aircraft within range (${this.range} meters) from own feeder data.`);
+    }
+
       return acList;
     } catch (error) {
       return Promise.reject(error);
@@ -433,7 +447,8 @@ class VirtualRadar {
 
           res.body = resBody;
           if (res.statusCode === 429) {
-            const errorMessage = `Rate limit exceeded. Retry after ${this.retryAfterSeconds} seconds.`;
+            this.apiCredits = 0; //to trigger failover, if allowed
+            const errorMessage = `Rate limit exceeded - ${this.apiCredits} credits. Retry after ${this.retryAfterSeconds} seconds.`;
             return reject(Error(errorMessage));
           }
 

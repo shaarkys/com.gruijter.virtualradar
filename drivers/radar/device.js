@@ -138,7 +138,7 @@ class RadarDevice extends Homey.Device {
           this.log("Error sending notification:", err);
         });
     }
-
+/*
     // Deactivate failover if API credits are restored
     if (credits > 0 && this.settings.failoverToOwnData && this.settings.feederSerial) {
       // Notify the user about failover deactivation
@@ -150,7 +150,7 @@ class RadarDevice extends Homey.Device {
         .catch((err) => {
           this.log("Error sending notification:", err);
         });
-    }
+    }*/
   }
 
   // this method is called when the Device is added
