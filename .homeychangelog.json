@@ -13,5 +13,8 @@
   },
   "3.2.4": {
     "en": "Fix GETLOGs on the app setting page"
+  },
+  "3.2.6": {
+    "en": "New option OpenSky - fail back to own feeder data in case of API credit depleted"
   }
 }
