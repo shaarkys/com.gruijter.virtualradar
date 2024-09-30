@@ -1,6 +1,6 @@
 /* eslint-disable prefer-destructuring */
 /*
-Copyright 2018 -2021, Robin de Gruijter (gruijter@hotmail.com)
+Copyright 2018 -2021, Robin de Gruijter
 
 This file is part of com.gruijter.virtualradar.
 
@@ -82,6 +82,7 @@ class VirtualRadar {
     this.password = settings.password || null;
     this.apiCredits = null; // Initialize apiCredits
     this.retryAfterSeconds = null; // Initialize retryAfterSeconds
+    this.retryTimestamp = null; // Initialize retryTimestamp for cooldown period
     // this.fa = new FlightAware();
     this.onCreditsUpdate = null; // Callback for credits update
     this.fallbackOwnData = settings.fallbackOwnData || false;
@@ -104,22 +105,23 @@ class VirtualRadar {
         console.warn("Feeder Serial Number is not provided. Falling back to general data.");
         this.fallbackOwnData = false; // Disable fallback to prevent future issues
       }
-      // Use own data endpoint only if failoverToOwnData is enabled and apiCredits are depleted
-      if (
-        (this.fallbackOwnData && this.feederSerial) ||
-        (this.failoverToOwnData && this.feederSerial && this.apiCredits !== null && this.apiCredits <= 0)
-      ) {
-        //console.log("Failover to own data activated.");
+
+      // Determine whether to use own data or general data
+      const useOwnData = this.shouldUseOwnData();
+
+      if (useOwnData) {
         // Use own data endpoint
+        // console.log("Using own data endpoint.");
         path = `/api/states/own?${qs.stringify({ serials: this.feederSerial })}`;
       } else {
         // Use general endpoint
+        // console.log("Using general data endpoint.");
         const bounds = this._getBounds();
         query = {
-          lamin: bounds.lamin, //	lower bound for the latitude in decimal degrees
-          lomin: bounds.lomin, //	lower bound for the longitude in decimal degrees
-          lamax: bounds.lamax, //	upper bound for the latitude in decimal degrees
-          lomax: bounds.lomax, //	upper bound for the longitude in decimal degrees
+          lamin: bounds.lamin, // lower bound for the latitude in decimal degrees
+          lomin: bounds.lomin, // lower bound for the longitude in decimal degrees
+          lamax: bounds.lamax, // upper bound for the latitude in decimal degrees
+          lomax: bounds.lomax, // upper bound for the longitude in decimal degrees
           extended: true,
         };
         path = `/api/states/all?${qs.stringify(query)}`;
@@ -138,38 +140,45 @@ class VirtualRadar {
       };
 
       const jsonData = await this._makeRequest(options);
-      if (!jsonData.states) {
+
+      if (!jsonData || !jsonData.states) {
         jsonData.states = [];
       }
 
       // Fetch and enrich aircraft data
-      let acList = await Promise.all(
-        jsonData.states.map(async (state) => {
-          let ac = await this._getAcNormal(state); // normalize the data
-          ac = await this._getRoute(ac); // try to enrich with route information
-          ac = await this._getMeta(ac); // try to enrich with metadata (operator, model, etc.)
+      let acListPromises = jsonData.states.map(async (state) => {
+        let ac = await this._getAcNormal(state); // Normalize the data
+        if (ac === null) {
+          // Invalid aircraft data, skip this aircraft
+          return null;
+        }
+        ac = await this._getRoute(ac); // Try to enrich with route information
+        ac = await this._getMeta(ac); // Try to enrich with metadata (operator, model, etc.)
 
-          // Ensure fallbacks for missing data
-          ac.from = ac.from || "N/A";
-          ac.to = ac.to || "N/A";
-          ac.op = ac.op || "N/A";
-          ac.mdl = ac.mdl || "N/A";
+        // Ensure fallbacks for missing data
+        ac.from = ac.from || "N/A";
+        ac.to = ac.to || "N/A";
+        ac.op = ac.op || "N/A";
+        ac.mdl = ac.mdl || "N/A";
 
-          return ac;
-        })
-      );
+        return ac;
+      });
 
-      // **Implement Distance Filtering Only for Own Feeder Data**
-    if (
-      (this.fallbackOwnData && this.feederSerial) ||
-      (this.failoverToOwnData && this.feederSerial && this.apiCredits !== null && this.apiCredits <= 0)
-    ) {
-      acList = acList.filter(ac => ac.dst <= this.range);
-      //console.log(`Filtered ${acList.length} aircraft within range (${this.range} meters) from own feeder data.`);
-    }
+      // Wait for all aircraft processing to complete
+      let acList = await Promise.all(acListPromises);
+
+      // Filter out null entries resulting from invalid aircraft
+      acList = acList.filter((ac) => ac !== null);
+
+      // Implement Distance Filtering Only for Own Feeder Data
+      if (useOwnData) {
+        acList = acList.filter((ac) => ac.dst <= this.range);
+        // console.log(`Filtered ${acList.length} aircraft within range (${this.range} meters) from own feeder data.`);
+      }
 
       return acList;
     } catch (error) {
+      // Propagate the error to the caller
       return Promise.reject(error);
     }
   }
@@ -212,8 +221,8 @@ class VirtualRadar {
         method: "GET",
       };
 
-      const jsonData = await this._makeRequest(options);
-      if (!jsonData.states) {
+      const jsonData = await this._makeRequest(options).catch(() => undefined);
+      if (!jsonData || !jsonData.states) {
         jsonData.states = [];
       }
 
@@ -324,39 +333,43 @@ class VirtualRadar {
   // returns the normalized state of an aircraft
   async _getAcNormal(state) {
     const ac = {
-      icao: state[0].toUpperCase(),
-      call: state[1].replace(/[^0-9a-zA-Z]+/gm, ""),
-      oc: state[2],
+      icao: state[0] ? state[0].toUpperCase() : "",
+      call: state[1] ? state[1].replace(/[^0-9a-zA-Z]+/gm, "") : "",
+      oc: state[2] || "",
       posTime: state[3],
       lastSeen: state[4],
       lon: state[5],
       lat: state[6],
-      bAlt: Math.round(Number(state[7] || 0)), // galt * 0.3048 = ft > m
+      bAlt: Math.round(Number(state[7] || 0)),
       gnd: state[8],
-      spd: Math.round(Number(state[9] || 0) * 1.852 * 1.852), // Spd * 1.852 = km/h // speed indication makes no sense
+      spd: Math.round(Number(state[9] || 0) * 1.852 * 1.852),
       brng: state[10],
-      vsi: Math.round(Number(state[11] || 0) * 1.852), // Spd * 1.852 = km/h,
+      vsi: Math.round(Number(state[11] || 0) * 1.852),
       sensors: state[12],
-      gAlt: Math.round(Number(state[13] || 0)), // galt * 0.3048 = ft> m
+      gAlt: Math.round(Number(state[13] || 0)),
       sqk: state[14],
       spi: state[15],
-      // posSource: state[16],
-      // states not supported by openSky
       reg: "",
       from: "",
       to: "",
       op: "",
       mdl: "",
-      // dst: undefined,
       mil: false,
     };
-    // calculate the distance
+
+    // Validate latitude and longitude
+    if (ac.lat === null || ac.lat === undefined || isNaN(ac.lat) || ac.lon === null || ac.lon === undefined || isNaN(ac.lon)) {
+      // Skip this aircraft by returning null
+      return null;
+    }
+
+    // Calculate the distance
     ac.dst = Math.round(this._getAcDistance(ac) * 1000);
-    // const faData = await this.fa.getFlightInfo(ac.callSign);
-    // Object.assign(ac, faData);
+
+    // Continue processing the aircraft
     const acEnriched = await this._getRoute(ac);
     const acEnriched2 = await this._getMeta(acEnriched);
-    return Promise.resolve(acEnriched2);
+    return acEnriched2;
   }
 
   _getBounds() {
@@ -370,10 +383,16 @@ class VirtualRadar {
   }
 
   _getAcDistance(ac) {
-    const acLoc = new GeoPoint(ac.lat, ac.lon);
-    return this.center.distanceTo(acLoc, true);
+    try {
+      const acLoc = new GeoPoint(ac.lat, ac.lon);
+      return this.center.distanceTo(acLoc, true);
+    } catch (error) {
+      // Rethrow the error to be caught in the calling method
+      throw error;
+    }
   }
 
+  // Makes an HTTPS request and returns the JSON data
   async _makeRequest(options) {
     try {
       const res = await this._makeHttpsRequest(options);
@@ -385,28 +404,35 @@ class VirtualRadar {
       if (res.statusCode !== 200 || !res.headers["content-type"].includes("application/json")) {
         throw new Error(`Service: ${res.statusCode}`);
       }
+
       const jsonData = JSON.parse(res.body);
-      // this.log(util.inspect(jsonData, { depth: null, colors: true }));
-      // if (jsonData.time === undefined) {
-      // 	throw Error('Invalid response from API');
-      // }
 
       if (!jsonData.states) {
         jsonData.states = [];
       }
 
       this.lastScan = jsonData.time || Date.now();
+
       // Store remaining credits
-      const remainingCredits = this.apiCredits !== null ? this.apiCredits : 0;
+      const rateLimitRemaining = res.headers["x-rate-limit-remaining"];
+      if (rateLimitRemaining !== undefined) {
+        this.apiCredits = parseInt(rateLimitRemaining, 10);
+      }
+
+      // Reset retryTimestamp if we have credits
+      if (this.apiCredits !== null && this.apiCredits > 0) {
+        this.retryTimestamp = null;
+      }
 
       // Assuming you have a way to update device capabilities, you might emit an event or call a callback
       if (this.onCreditsUpdate) {
-        this.onCreditsUpdate(remainingCredits);
+        this.onCreditsUpdate(this.apiCredits);
       }
 
       return jsonData;
     } catch (error) {
-      return Promise.reject(error.message);
+      // Reject the promise to propagate the error back to the driver
+      return Promise.reject(error);
     }
   }
 
@@ -447,7 +473,12 @@ class VirtualRadar {
 
           res.body = resBody;
           if (res.statusCode === 429) {
-            this.apiCredits = 0; //to trigger failover, if allowed
+            this.apiCredits = 0; // To trigger failover, if allowed
+            if (this.retryAfterSeconds !== undefined) {
+              this.retryTimestamp = Date.now() + (this.retryAfterSeconds + 600) * 1000; // Retry after retryAfterSeconds + 600 seconds
+            } else {
+              this.retryTimestamp = Date.now() + 3600 * 1000; // Default to 1 hour
+            }
             const errorMessage = `Rate limit exceeded - ${this.apiCredits} credits. Retry after ${this.retryAfterSeconds} seconds.`;
             return reject(Error(errorMessage));
           }
@@ -467,6 +498,28 @@ class VirtualRadar {
       // req.write(postData);
       req.end(postData || "");
     });
+  }
+
+  // New method to determine whether to use own data or general data
+  shouldUseOwnData() {
+    const now = Date.now();
+    if (this.fallbackOwnData && this.feederSerial) {
+      return true;
+    }
+
+    if (this.failoverToOwnData && this.feederSerial) {
+      if (this.apiCredits !== null && this.apiCredits <= 0) {
+        if (this.retryTimestamp && now >= this.retryTimestamp) {
+          // Time to retry using the general endpoint
+          return false;
+        } else {
+          // Still in cooldown, use own data
+          return true;
+        }
+      }
+    }
+    // Otherwise, use general endpoint
+    return false;
   }
 }
 
