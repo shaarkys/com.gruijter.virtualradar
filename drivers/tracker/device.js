@@ -311,7 +311,7 @@ class Tracker extends Homey.Device {
     } catch (error) {
       this.error(error);
 
-      if (error.includes("Rate limit exceeded")) {
+      if (error.message && error.message.includes("Rate limit exceeded")) {
         // Notify the user about the rate limit
         await this.homey.notifications
           .createNotification({
