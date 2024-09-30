@@ -16,5 +16,8 @@
   },
   "3.2.6": {
     "en": "New option OpenSky - fail back to own feeder data in case of API credit depleted"
+  },
+  "3.2.7": {
+    "en": "OpenSky modifications to better handle failovers to own data in case of insufficient API credits and failover back after cooldown period"
   }
 }
