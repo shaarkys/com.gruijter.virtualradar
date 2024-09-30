@@ -19,5 +19,8 @@
   },
   "3.2.7": {
     "en": "OpenSky modifications to better handle failovers to own data in case of insufficient API credits and failover back after cooldown period"
+  },
+  "3.2.8": {
+    "en": "Small fix for error handling"
   }
 }
