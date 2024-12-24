@@ -22,5 +22,8 @@
   },
   "3.2.8": {
     "en": "Small fix for error handling"
+  },
+  "3.2.9": {
+    "en": "Removal of ADBSExchange Feeder, attempt to add ADBSExchange RapidAPI Paid option"
   }
 }
