@@ -84,7 +84,7 @@ class RadarDevice extends Homey.Device {
         APIKey: false,
       },
       adsbExchangeFeeder: {
-        name: "adsbExchangeFeeder",
+        name: "adsbExchangePaid",
         capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: true,
       },
@@ -120,37 +120,39 @@ class RadarDevice extends Homey.Device {
   }
 
   // Callback to update API credits
-
   updateApiCredits(credits) {
+    // Update the capability value for API credits
     this.setCapabilityValue("api_credits", credits).catch((error) => {
       this.log("Error setting api_credits:", error);
     });
 
-    // Activate failover if API credits are depleted
-    if (credits <= 0 && this.settings.failoverToOwnData && this.settings.feederSerial) {
-      // Notify the user about failover activation
-      this.homey.notifications
-        .createNotification({
-          excerpt: "OpenSky API credits depleted. Switching to own feeder data.",
-          state: "warning",
-        })
-        .catch((err) => {
-          this.log("Error sending notification:", err);
-        });
+    // Check if credits have crossed the threshold and act accordingly
+    if (this.previousCredits !== undefined) {
+      if (this.previousCredits > 0 && credits <= 0 && this.settings.failoverToOwnData && this.settings.feederSerial) {
+        // Credits depleted, send notification about failover activation
+        this.homey.notifications
+          .createNotification({
+            excerpt: "OpenSky API credits depleted. Switching to own feeder data.",
+            state: "warning",
+          })
+          .catch((err) => {
+            this.log("Error sending notification:", err);
+          });
+      } else if (this.previousCredits <= 0 && credits > 0 && this.settings.failoverToOwnData && this.settings.feederSerial) {
+        // Credits restored, send notification about failover deactivation
+        this.homey.notifications
+          .createNotification({
+            excerpt: "OpenSky API credits restored. Switching back to OpenSky API.",
+            state: "ok",
+          })
+          .catch((err) => {
+            this.log("Error sending notification:", err);
+          });
+      }
     }
-/*
-    // Deactivate failover if API credits are restored
-    if (credits > 0 && this.settings.failoverToOwnData && this.settings.feederSerial) {
-      // Notify the user about failover deactivation
-      this.homey.notifications
-        .createNotification({
-          excerpt: "OpenSky API credits restored. Switching back to OpenSky API.",
-          state: "ok",
-        })
-        .catch((err) => {
-          this.log("Error sending notification:", err);
-        });
-    }*/
+
+    // Update previousCredits for next comparison
+    this.previousCredits = credits;
   }
 
   // this method is called when the Device is added

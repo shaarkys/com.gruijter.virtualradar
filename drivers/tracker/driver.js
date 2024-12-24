@@ -37,7 +37,7 @@ class TrackerDriver extends Homey.Driver {
         APIKey: false,
       },
       adsbExchangeFeeder: {
-        name: "adsbExchangeFeeder",
+        name: "adsbExchangePaid",
         capabilities: ["onoff", "loc", "brng", "alt", "spd", "to", "dst", "ttime"],
         APIKey: true,
       },
@@ -53,6 +53,13 @@ class TrackerDriver extends Homey.Driver {
       try {
         this.log("save button pressed in frontend");
         const service = data.radarSelection || "openSky";
+
+        // Verify if the service exists
+        if (!this.radarServices[service]) {
+          throw new Error(`Radar service ${service} is not supported.`);
+        }
+
+        // Generate a unique id for the device
         const id = `${this.radarServices[service].name}_${crypto.randomBytes(3).toString("hex")}`;
         const name = data.ico || data.reg || data.call;
 

@@ -23,15 +23,18 @@ const Homey = require('homey');
 // const https = require('https');
 const Logger = require('./captureLogs.js');
 
+const DEBUG = process.env.DEBUG === "1";
+
 class VirtualRadarApp extends Homey.App {
 
 	async onInit() {
 		
-		if (process.env.DEBUG === '1') {
-			require('inspector').open(9222, '0.0.0.0', true);
+		this.log(`${this.id} is running...(debug mode ${DEBUG ? "on" : "off"})`);
+
+		if (DEBUG) {
+		  require("inspector").open(9229, "0.0.0.0");
 		}
-		
-		this.log('Virtual Radar app is running!');
+	
 		if (!this.logger) this.logger = new Logger({ homey: this, length: 200 });
 		// register some listeners
 		process.on('unhandledRejection', (error) => {

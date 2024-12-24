@@ -36,8 +36,8 @@ class RadarDriver extends Homey.Driver {
         capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: false,
       },
-      adsbExchangeFeeder: {
-        name: "adsbExchangeFeeder",
+      adsbExchangePaid: {
+        name: "adsbExchangePaid",
         capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: true,
       },
@@ -53,6 +53,13 @@ class RadarDriver extends Homey.Driver {
       try {
         this.log("save button pressed in frontend");
         const service = data.radarSelection || "openSky";
+
+        // Verify if the service exists
+        if (!this.radarServices[service]) {
+          throw new Error(`Radar service ${service} is not supported.`);
+        }
+
+        // Generate a unique id for the device
         const id = `${this.radarServices[service].name}_${crypto.randomBytes(3).toString("hex")}`;
         const name = service;
 

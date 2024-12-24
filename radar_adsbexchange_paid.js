@@ -21,6 +21,8 @@ along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/
 
 const https = require('https');
 const GeoPoint = require('geopoint');
+const qs = require('querystring');
+
 // const util = require('util');
 // const FlightAware = require('./flightaware');
 
@@ -55,128 +57,227 @@ const GeoPoint = require('geopoint');
 // 	}
 // }
 
-// this class represents a virtual radar
 class VirtualRadar {
 	constructor(settings) {
-		// this.username = settings.username;
-		this.password = settings.password;
-		this.lat = settings.lat;	//	float	WGS-84 latitude in decimal degrees. Can be null.
-		this.lon = settings.lon;	//	float	WGS-84 longitude in decimal degrees. Can be null.
-		this.range = settings.dst;	// float Radar range in km.
-		this.lastScan = 0; // int Unix timestamp (seconds) for the last radar update.
-		this.timeout = 15000; // int Timeout in ms for the http service call
-		this.center = new GeoPoint(this.lat, this.lon);
-		// this.fa = new FlightAware();
+	  this.lat = settings.lat; // WGS-84 latitude in decimal degrees
+	  this.lon = settings.lon; // WGS-84 longitude in decimal degrees
+	  this.range = settings.dst * 1000; // Radar range in meters
+	  this.lastScan = 0; // Unix timestamp for the last radar update
+	  this.center = new GeoPoint(this.lat, this.lon);
+	  this.timeout = 20000; // Timeout in ms for the HTTP service call
+	  this.apiKey = settings.APIKey; // RapidAPI Key
+	  this.retryAfterSeconds = null; // For rate limiting
+	  this.retryTimestamp = null; // Cooldown period
+	  this.onCreditsUpdate = null; // Callback for credits update
 	}
-
-	// returns an array of aircraft states that are in range
+  
+	// Method to set the callback
+	setCreditsUpdateCallback(callback) {
+	  this.onCreditsUpdate = callback;
+	}
+  
+	// Determines whether to use own data or general data
+	shouldUseOwnData() {
+	  const now = Date.now();
+	  // Paid API does not use own data, so always return false
+	  return false;
+	}
+  
+	// Fetches aircraft in range
 	async getAcInRange() {
-		try {
-			// const headers = {
-			// 	'Content-Length': 0,
-			// 	'api-auth': this.password,
-			// };
-			const options = {
-				hostname: 'adsbexchange-com1.p.rapidapi.com',
-				path: `/api/aircraft/json/lat/${this.lat}/lon/${this.lon}/dist/${this.range}/`,
-				headers: {
-					'Content-Length': 0,
-					'X-RapidAPI-Host': 'adsbexchange-com1.p.rapidapi.com',
-					'X-RapidAPI-Key': this.password,
-				},
-				method: 'GET',
-			};
-			const result = await this._makeHttpsRequest(options);
-			if (result.statusCode !== 200 || result.headers['content-type'] !== 'application/json') {
-				throw Error(`API error : ${result.statusCode} ${result.body.substring(0, 40)}`);
-			}
-			const jsonData = JSON.parse(result.body);
-			// console.log(util.inspect(jsonData, { depth: null, colors: true }));
-			if (jsonData.ctime === undefined) {
-				throw Error('Invalid response from API');
-			}
-			if (jsonData.msg) {
-				throw Error(jsonData.msg);
-			}
-			this.lastScan = jsonData.ctime;
-			if (!jsonData.ac) {
-				jsonData.ac = [];
-			}
-			const acList = jsonData.ac
-				.map((state) => Promise.resolve(this._getAc(state)));
-			return Promise.all(acList);
-		} catch (error) {
-			return Promise.reject(error);
+	  try {
+		const now = Date.now();
+  
+		// Check for rate limiting
+		if (this.apiCredits !== null && this.apiCredits <= 0 && this.retryTimestamp && now < this.retryTimestamp) {
+		  if (!this.cooldownLogged) {
+			console.warn(`In cooldown period due to rate limiting, will retry after ${new Date(this.retryTimestamp)}`);
+			this.cooldownLogged = true;
+		  }
+		  return []; // Return empty array during cooldown
 		}
-	}
-
-	async _getAc(state) {
-		const ac = {
-			icao: state.icao,
-			callSign: state.call,
-			originCountry: state.cou,
-			posTime: Number(state.postime),
-			// lastSeen: state[4],
-			lon: Number(state.lon),
-			lat: Number(state.lat),
-			bAlt: Math.round((Number(state.alt || 0) * 0.3048)), // galt * 0.3048 = m
-			gnd: state.gnd !== '0',
-			spd: Math.round(((Number(state.spd || 0)) * 1.852)), // Spd * 1.852 = km/h,
-			brng: Number(state.trak),
-			vs: Math.round(((Number(state.vsi || 0)) * 1.852)), // Spd * 1.852 = km/h,
-			// sensors: state[12],
-			gAlt: Math.round((Number(state.galt || 0) * 0.3048)), // galt * 0.3048 = m
-			sqk: state.sqk,
-			spi: state.interested !== '0',
-			// posSource: state[16],
+		this.cooldownLogged = false; // Reset cooldown log flag
+  
+		const bounds = this._getBounds();
+		const query = {
+		  lamin: bounds.lamin,
+		  lomin: bounds.lomin,
+		  lamax: bounds.lamax,
+		  lomax: bounds.lomax,
+		  extended: true,
 		};
-		// calculate the distance
-		ac.dst = Math.round(this._getAcDistance(ac) * 1000);
-		// // enrich from FlightAware
-		// const faData = await this.fa.getFlightInfo(ac.callSign);
-		// console.log(faData);
-		// Object.assign(ac, faData);
-		return Promise.resolve(ac);
+		const path = `/api/aircraft/json/lat/${this.lat}/lon/${this.lon}/dist/${this.range / 1852}/`; // Convert meters to nautical miles
+  
+		const headers = {
+		  "X-RapidAPI-Host": "adsbexchange-com1.p.rapidapi.com",
+		  "X-RapidAPI-Key": this.apiKey,
+		  "Content-Length": 0,
+		  "cache-control": "no-cache",
+		};
+  
+		const options = {
+		  hostname: "adsbexchange-com1.p.rapidapi.com",
+		  path: path,
+		  headers,
+		  method: "GET",
+		};
+  
+		const jsonData = await this._makeRequest(options);
+  
+		if (!jsonData.ac) {
+		  jsonData.ac = [];
+		}
+  
+		const acListPromises = jsonData.ac.map((state) => this._getAcNormal(state));
+		let acList = await Promise.all(acListPromises);
+  
+		// Filter by distance if necessary (already handled by API)
+  
+		return acList.filter(ac => ac !== null);
+	  } catch (error) {
+		console.error("Error fetching aircraft in range:", error);
+		throw error;
+	  }
 	}
-
+  
+	// Normalize aircraft data
+	async _getAcNormal(state) {
+	  const ac = {
+		icao: state.icao ? state.icao.toUpperCase() : "",
+		call: state.call ? state.call.replace(/[^0-9a-zA-Z]+/gm, "") : "",
+		oc: state.cou || "",
+		posTime: Number(state.postime),
+		lastSeen: Number(state.postime),
+		lon: Number(state.lon),
+		lat: Number(state.lat),
+		bAlt: Math.round(Number(state.alt || 0)),
+		gnd: state.gnd !== '0',
+		spd: Math.round(Number(state.spd || 0) * 1.852), // m/s to km/h
+		brng: Number(state.trak),
+		vsi: Math.round(Number(state.vsi || 0) * 0.00508), // Assuming vsi is in feet per minute
+		gAlt: Math.round(Number(state.galt || 0)),
+		sqk: state.sqk,
+		spi: state.interested !== '0',
+		reg: "",
+		from: "",
+		to: "",
+		op: "",
+		mdl: "",
+		mil: false,
+	  };
+  
+	  // Validate latitude and longitude
+	  if (isNaN(ac.lat) || isNaN(ac.lon)) {
+		return null;
+	  }
+  
+	  // Calculate distance
+	  ac.dst = Math.round(this._getAcDistance(ac) * 1000);
+  
+	  // Enrich data if necessary
+	  // Since ADSB Exchange Paid API might not provide additional data, skip enrichment
+	  // Alternatively, implement if API supports
+  
+	  return ac;
+	}
+  
+	// Calculate distance from center
 	_getAcDistance(ac) {
-		const acLoc = new GeoPoint(ac.lat, ac.lon);
-		return this.center.distanceTo(acLoc);
+	  const acLoc = new GeoPoint(ac.lat, ac.lon);
+	  return this.center.distanceTo(acLoc, true); // in nautical miles
 	}
-
+  
+	// Make HTTPS request
+	async _makeRequest(options) {
+	  try {
+		const res = await this._makeHttpsRequest(options);
+  
+		if (res.statusCode === 429) {
+		  // Rate limit exceeded
+		  const retryAfter = parseInt(res.headers['retry-after'], 10) || 3600; // Default to 1 hour
+		  this.retryTimestamp = Date.now() + retryAfter * 1000;
+		  this.apiCredits = 0;
+  
+		  if (this.onCreditsUpdate) {
+			this.onCreditsUpdate(this.apiCredits);
+		  }
+  
+		  throw new Error(`Rate limit exceeded. Retry after ${retryAfter} seconds.`);
+		}
+  
+		if (res.statusCode !== 200 || !res.headers["content-type"].includes("application/json")) {
+		  throw new Error(`Service Error: ${res.statusCode}`);
+		}
+  
+		const jsonData = JSON.parse(res.body);
+  
+		// Update API credits from headers if available
+		const rateLimitRemaining = res.headers["x-rate-limit-remaining"];
+		if (rateLimitRemaining !== undefined) {
+		  this.apiCredits = parseInt(rateLimitRemaining, 10);
+		}
+  
+		if (this.onCreditsUpdate) {
+		  this.onCreditsUpdate(this.apiCredits);
+		}
+  
+		this.lastScan = jsonData.ctime || Date.now();
+  
+		return jsonData;
+	  } catch (error) {
+		console.error("Error in _makeRequest:", error);
+		throw error;
+	  }
+	}
+  
+	// Low-level HTTPS request
 	_makeHttpsRequest(options, postData, timeout) {
-		return new Promise((resolve, reject) => {
-			const opts = options;
-			opts.timeout = timeout || this.timeout;
-			const req = https.request(opts, (res) => {
-				let resBody = '';
-				res.on('data', (chunk) => {
-					resBody += chunk;
-				});
-				res.once('end', () => {
-					if (!res.complete) {
-						this.error('The connection was terminated while the message was still being sent');
-						return reject(Error('The connection was terminated while the message was still being sent'));
-					}
-					res.body = resBody;
-					return resolve(res); // resolve the request
-				});
-			});
-			req.on('error', (e) => {
-				req.destroy();
-				return reject(e);
-			});
-			req.on('timeout', () => {
-				req.destroy();
-			});
-			// req.write(postData);
-			req.end(postData || '');
+	  return new Promise((resolve, reject) => {
+		const opts = { ...options };
+		opts.timeout = timeout || this.timeout;
+  
+		const req = https.request(opts, (res) => {
+		  let resBody = "";
+		  res.on("data", (chunk) => {
+			resBody += chunk;
+		  });
+		  res.once("end", () => {
+			if (!res.complete) {
+			  return reject(new Error("The connection was terminated while the message was still being sent"));
+			}
+  
+			res.body = resBody;
+  
+			return resolve(res);
+		  });
 		});
+  
+		req.on("error", (e) => {
+		  req.destroy();
+		  return reject(e);
+		});
+  
+		req.on("timeout", () => {
+		  req.destroy();
+		  return reject(new Error("Request timed out"));
+		});
+  
+		req.end(postData || "");
+	  });
 	}
-
-}
-
-module.exports = VirtualRadar;
+  
+	_getBounds() {
+	  const bounds = this.center.boundingCoordinates(this.range / 1852, undefined, true); // Convert meters to nautical miles
+	  return {
+		lamin: bounds[0]._degLat,
+		lomin: bounds[0]._degLon,
+		lamax: bounds[1]._degLat,
+		lomax: bounds[1]._degLon,
+	  };
+	}
+  }
+  
+  module.exports = VirtualRadar;
 
 /*
 { ac:
