@@ -88,6 +88,8 @@ class VirtualRadar {
     this.fallbackOwnData = settings.fallbackOwnData || false;
     this.feederSerial = settings.feederSerial || null;
     this.failoverToOwnData = settings.failoverToOwnData || false;
+
+    this.cooldownLogged = false; // Initialize the cooldown log flag
   }
 
   // Method to set the callback
@@ -95,143 +97,180 @@ class VirtualRadar {
     this.onCreditsUpdate = callback;
   }
 
-  // returns an array of aircraft states that are in range
-  async getAcInRange() {
-    try {
-      let path;
-      let query;
+  // Returns an array of aircraft states that are in range
+async getAcInRange() {
+  try {
+    const now = Date.now();
 
-      if (this.fallbackOwnData && !this.feederSerial) {
-        console.warn("Feeder Serial Number is not provided. Falling back to general data.");
-        this.fallbackOwnData = false; // Disable fallback to prevent future issues
+    // Determine whether to use own data or general data
+    const useOwnData = this.shouldUseOwnData();
+
+    // Check for rate limiting only if not using own data
+    if (!useOwnData && this.apiCredits !== null && this.apiCredits <= 0 && this.retryTimestamp && now < this.retryTimestamp) {
+      // We are in cooldown due to rate limiting
+      if (!this.cooldownLogged) {
+        console.warn(`In cooldown period due to rate limiting, will retry after ${new Date(this.retryTimestamp)}`);
+        this.cooldownLogged = true;
       }
-
-      // Determine whether to use own data or general data
-      const useOwnData = this.shouldUseOwnData();
-
-      if (useOwnData) {
-        // Use own data endpoint
-        // console.log("Using own data endpoint.");
-        path = `/api/states/own?${qs.stringify({ serials: this.feederSerial })}`;
-      } else {
-        // Use general endpoint
-        // console.log("Using general data endpoint.");
-        const bounds = this._getBounds();
-        query = {
-          lamin: bounds.lamin, // lower bound for the latitude in decimal degrees
-          lomin: bounds.lomin, // lower bound for the longitude in decimal degrees
-          lamax: bounds.lamax, // upper bound for the latitude in decimal degrees
-          lomax: bounds.lomax, // upper bound for the longitude in decimal degrees
-          extended: true,
-        };
-        path = `/api/states/all?${qs.stringify(query)}`;
-      }
-
-      const headers = {
-        "cache-control": "no-cache",
-        Connection: "Keep-Alive",
-      };
-
-      const options = {
-        hostname: "opensky-network.org",
-        path: path,
-        headers,
-        method: "GET",
-      };
-
-      const jsonData = await this._makeRequest(options);
-
-      if (!jsonData || !jsonData.states) {
-        jsonData.states = [];
-      }
-
-      // Fetch and enrich aircraft data
-      let acListPromises = jsonData.states.map(async (state) => {
-        let ac = await this._getAcNormal(state); // Normalize the data
-        if (ac === null) {
-          // Invalid aircraft data, skip this aircraft
-          return null;
-        }
-        ac = await this._getRoute(ac); // Try to enrich with route information
-        ac = await this._getMeta(ac); // Try to enrich with metadata (operator, model, etc.)
-
-        // Ensure fallbacks for missing data
-        ac.from = ac.from || "N/A";
-        ac.to = ac.to || "N/A";
-        ac.op = ac.op || "N/A";
-        ac.mdl = ac.mdl || "N/A";
-
-        return ac;
-      });
-
-      // Wait for all aircraft processing to complete
-      let acList = await Promise.all(acListPromises);
-
-      // Filter out null entries resulting from invalid aircraft
-      acList = acList.filter((ac) => ac !== null);
-
-      // Implement Distance Filtering Only for Own Feeder Data
-      if (useOwnData) {
-        acList = acList.filter((ac) => ac.dst <= this.range);
-        // console.log(`Filtered ${acList.length} aircraft within range (${this.range} meters) from own feeder data.`);
-      }
-
-      return acList;
-    } catch (error) {
-      // Propagate the error to the caller
-      return Promise.reject(error);
+      return []; // Return empty array or cached data
     }
-  }
+    this.cooldownLogged = false; // Reset the flag if not in cooldown
 
-  // returns the state of a specific aircraft
-  async getAc(ACOpts) {
-    try {
-      let path;
-      let query = {};
+    let path;
+    let query;
 
-      if (this.fallbackOwnData && this.feederSerial) {
-        // Use own data endpoint
-        query.serials = this.feederSerial;
-        if (ACOpts.ico !== "") {
-          query.icao24 = ACOpts.ico.toLowerCase();
-        }
-        path = `/api/states/own?${qs.stringify(query)}`;
-      } else {
-        // Use general endpoint
-        if (ACOpts.ico !== "") {
-          query.icao24 = ACOpts.ico.toLowerCase();
-        }
-        if (ACOpts.reg !== "") {
-          query.reg = ACOpts.reg.toLowerCase();
-        }
-        if (ACOpts.call !== "") {
-          query.callsign = ACOpts.call.toLowerCase();
-        }
-        path = `/api/states/all?${qs.stringify(query)}`;
-      }
-
-      const headers = {
-        "cache-control": "no-cache",
-      };
-
-      const options = {
-        hostname: "opensky-network.org",
-        path: path,
-        headers,
-        method: "GET",
-      };
-
-      const jsonData = await this._makeRequest(options).catch(() => undefined);
-      if (!jsonData || !jsonData.states) {
-        jsonData.states = [];
-      }
-
-      const acList = jsonData.states.map(async (state) => Promise.resolve(await this._getAcNormal(state)));
-      return Promise.all(acList);
-    } catch (error) {
-      return Promise.reject(error);
+    if (this.fallbackOwnData && !this.feederSerial) {
+      console.warn("Feeder Serial Number is not provided. Falling back to general data.");
+      this.fallbackOwnData = false; // Disable fallback to prevent future issues
     }
+
+    // Determine the API endpoint to use based on whether we are using own data
+    if (useOwnData) {
+      // Use own data endpoint
+      path = `/api/states/own?${qs.stringify({ serials: this.feederSerial })}`;
+    } else {
+      // Use general endpoint
+      const bounds = this._getBounds();
+      query = {
+        lamin: bounds.lamin, // Lower bound for the latitude in decimal degrees
+        lomin: bounds.lomin, // Lower bound for the longitude in decimal degrees
+        lamax: bounds.lamax, // Upper bound for the latitude in decimal degrees
+        lomax: bounds.lomax, // Upper bound for the longitude in decimal degrees
+        extended: true,
+      };
+      path = `/api/states/all?${qs.stringify(query)}`;
+    }
+
+    const headers = {
+      "cache-control": "no-cache",
+      Connection: "Keep-Alive",
+    };
+
+    const options = {
+      hostname: "opensky-network.org",
+      path: path,
+      headers,
+      method: "GET",
+    };
+
+    // Make the request to OpenSky API
+    const jsonData = await this._makeRequest(options);
+
+    if (!jsonData || !jsonData.states) {
+      jsonData.states = [];
+    }
+
+    // Fetch and enrich aircraft data
+    let acListPromises = jsonData.states.map(async (state) => {
+      let ac = await this._getAcNormal(state); // Normalize the data
+      if (ac === null) {
+        // Invalid aircraft data, skip this aircraft
+        return null;
+      }
+      ac = await this._getRoute(ac); // Try to enrich with route information
+      ac = await this._getMeta(ac); // Try to enrich with metadata (operator, model, etc.)
+
+      // Ensure fallbacks for missing data
+      ac.from = ac.from || "N/A";
+      ac.to = ac.to || "N/A";
+      ac.op = ac.op || "N/A";
+      ac.mdl = ac.mdl || "N/A";
+
+      return ac;
+    });
+
+    // Wait for all aircraft processing to complete
+    let acList = await Promise.all(acListPromises);
+
+    // Filter out null entries resulting from invalid aircraft
+    acList = acList.filter((ac) => ac !== null);
+
+    // Implement distance filtering only for own feeder data
+    if (useOwnData) {
+      acList = acList.filter((ac) => ac.dst <= this.range);
+    }
+
+    return acList;
+  } catch (error) {
+    // Propagate the error to the caller
+    return Promise.reject(error);
   }
+}
+
+  // Returns the state of a specific aircraft
+async getAc(ACOpts) {
+  try {
+    const now = Date.now();
+
+    // Determine whether to use own data or general data
+    const useOwnData = this.shouldUseOwnData();
+
+    // Check for rate limiting only if not using own data
+    if (!useOwnData && this.apiCredits !== null && this.apiCredits <= 0 && this.retryTimestamp && now < this.retryTimestamp) {
+      // We are in cooldown due to rate limiting
+      if (!this.cooldownLogged) {
+        console.warn(`In cooldown period due to rate limiting, will retry after ${new Date(this.retryTimestamp)}`);
+        this.cooldownLogged = true;
+      }
+      return []; // Return empty array or cached data
+    }
+    this.cooldownLogged = false; // Reset the flag if not in cooldown
+
+    let path;
+    let query = {};
+
+    if (this.fallbackOwnData && !this.feederSerial) {
+      console.warn("Feeder Serial Number is not provided. Falling back to general data.");
+      this.fallbackOwnData = false; // Disable fallback to prevent future issues
+    }
+
+    // Determine the API endpoint to use based on whether we are using own data
+    if (useOwnData) {
+      // Use own data endpoint
+      query.serials = this.feederSerial;
+      if (ACOpts.ico !== "") {
+        query.icao24 = ACOpts.ico.toLowerCase();
+      }
+      path = `/api/states/own?${qs.stringify(query)}`;
+    } else {
+      // Use general endpoint
+      if (ACOpts.ico !== "") {
+        query.icao24 = ACOpts.ico.toLowerCase();
+      }
+      if (ACOpts.reg !== "") {
+        query.reg = ACOpts.reg.toLowerCase();
+      }
+      if (ACOpts.call !== "") {
+        query.callsign = ACOpts.call.toLowerCase();
+      }
+      path = `/api/states/all?${qs.stringify(query)}`;
+    }
+
+    const headers = {
+      "cache-control": "no-cache",
+    };
+
+    const options = {
+      hostname: "opensky-network.org",
+      path: path,
+      headers,
+      method: "GET",
+    };
+
+    // Make the request to OpenSky API
+    const jsonData = await this._makeRequest(options).catch(() => undefined);
+    if (!jsonData || !jsonData.states) {
+      jsonData.states = [];
+    }
+
+    // Normalize and process each aircraft state
+    const acList = jsonData.states.map(async (state) => Promise.resolve(await this._getAcNormal(state)));
+    return Promise.all(acList);
+  } catch (error) {
+    return Promise.reject(error);
+  }
+}
+
 
   // returns the route, operator and flightnumber of a specific aircraft
   async _getRoute(ac) {
@@ -401,8 +440,19 @@ class VirtualRadar {
         throw new Error("Authentication failed. Please check your username and password.");
       }
 
+      if (res.statusCode === 429) {
+        // Rate limit exceeded
+        this.apiCredits = 0; // Set credits to zero
+        let retryAfter = parseInt(res.headers['retry-after'], 10);
+        if (isNaN(retryAfter)) {
+          retryAfter = 3600; // Default to 1 hour
+        }
+        this.retryTimestamp = Date.now() + retryAfter * 1000;
+        throw new Error(`Rate limit exceeded. Retry after ${retryAfter} seconds.`);
+      }
+
       if (res.statusCode !== 200 || !res.headers["content-type"].includes("application/json")) {
-        throw new Error(`Service: ${res.statusCode}`);
+        throw new Error(`Service Error: ${res.statusCode}`);
       }
 
       const jsonData = JSON.parse(res.body);
@@ -431,6 +481,15 @@ class VirtualRadar {
 
       return jsonData;
     } catch (error) {
+      if (error.message.includes('Rate limit exceeded')) {
+        // Ensure apiCredits is set to zero
+        this.apiCredits = 0;
+
+        // Notify about credits update
+        if (this.onCreditsUpdate) {
+          this.onCreditsUpdate(this.apiCredits);
+        }
+      }
       // Reject the promise to propagate the error back to the driver
       return Promise.reject(error);
     }
@@ -455,32 +514,20 @@ class VirtualRadar {
         });
         res.once("end", () => {
           if (!res.complete) {
-            error("The connection was terminated while the message was still being sent");
             return reject(new Error("The connection was terminated while the message was still being sent"));
           }
 
-          // Extract rate limit headers
-          const rateLimitRemaining = res.headers["x-rate-limit-remaining"];
-          const rateLimitRetryAfter = res.headers["x-rate-limit-retry-after-seconds"];
-
-          if (rateLimitRemaining !== undefined) {
-            this.apiCredits = parseInt(rateLimitRemaining, 10);
-          }
-
-          if (rateLimitRetryAfter !== undefined) {
-            this.retryAfterSeconds = parseInt(rateLimitRetryAfter, 10);
-          }
-
           res.body = resBody;
+
           if (res.statusCode === 429) {
-            this.apiCredits = 0; // To trigger failover, if allowed
-            if (this.retryAfterSeconds !== undefined) {
-              this.retryTimestamp = Date.now() + (this.retryAfterSeconds + 600) * 1000; // Retry after retryAfterSeconds + 600 seconds
-            } else {
-              this.retryTimestamp = Date.now() + 3600 * 1000; // Default to 1 hour
+            // Rate limit exceeded
+            this.apiCredits = 0;
+            let retryAfter = parseInt(res.headers['retry-after'], 10);
+            if (isNaN(retryAfter)) {
+              retryAfter = 3600; // Default to 1 hour
             }
-            const errorMessage = `Rate limit exceeded - ${this.apiCredits} credits. Retry after ${this.retryAfterSeconds} seconds.`;
-            return reject(Error(errorMessage));
+            this.retryTimestamp = Date.now() + retryAfter * 1000;
+            return reject(new Error(`Rate limit exceeded. Retry after ${retryAfter} seconds.`));
           }
 
           return resolve(res); // resolve the request
@@ -500,7 +547,7 @@ class VirtualRadar {
     });
   }
 
-  // New method to determine whether to use own data or general data
+  // Method to determine whether to use own data or general data
   shouldUseOwnData() {
     const now = Date.now();
     if (this.fallbackOwnData && this.feederSerial) {
@@ -509,16 +556,19 @@ class VirtualRadar {
 
     if (this.failoverToOwnData && this.feederSerial) {
       if (this.apiCredits !== null && this.apiCredits <= 0) {
-        if (this.retryTimestamp && now >= this.retryTimestamp) {
-          // Time to retry using the general endpoint
+        if (this.retryTimestamp && now < this.retryTimestamp) {
+          // Still in cooldown, use own data
+          return true;
+        } else if (this.retryTimestamp && now >= this.retryTimestamp) {
+          // Cooldown over, attempt API again
           return false;
         } else {
-          // Still in cooldown, use own data
+          // No retryTimestamp set, assume in cooldown
           return true;
         }
       }
     }
-    // Otherwise, use general endpoint
+    // Use general endpoint
     return false;
   }
 }
