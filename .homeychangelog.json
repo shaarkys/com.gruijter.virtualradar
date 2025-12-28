@@ -25,5 +25,8 @@
   },
   "3.2.9": {
     "en": "Removal of ADBSExchange Feeder, attempt to add ADBSExchange RapidAPI Paid option"
+  },
+  "3.3.0": {
+    "en": "New logo + OpenSKY OAuth2 support."
   }
 }
