@@ -53,10 +53,26 @@ class RadarDriver extends Homey.Driver {
       try {
         this.log("save button pressed in frontend");
         const service = data.radarSelection || "openSky";
+        const authMethod = (data.authMethod || "oauth2").toLowerCase();
 
         // Verify if the service exists
         if (!this.radarServices[service]) {
           throw new Error(`Radar service ${service} is not supported.`);
+        }
+
+        if (service === "openSky") {
+          if (authMethod === "oauth2") {
+            if (!data.clientId || !data.clientSecret) {
+              throw new Error("OpenSky OAuth2 selected, but client ID or secret is missing.");
+            }
+          } else if (authMethod === "basic") {
+            if (!data.username || !data.password) {
+              throw new Error("OpenSky legacy authentication selected, but username or password is missing.");
+            }
+          }
+          this.log(
+            `[Driver:radar] Auth method: ${authMethod}; clientId set: ${!!data.clientId}; username set: ${!!data.username}`
+          );
         }
 
         // Generate a unique id for the device
@@ -76,8 +92,11 @@ class RadarDriver extends Homey.Driver {
             onlyGnd: false,
             onlyAir: true,
             service: this.radarServices[service].name,
-            username: data.username || '',
-            password: data.password || '',
+            authMethod: data.authMethod || "oauth2",
+            username: data.username || "",
+            password: data.password || "",
+            clientId: data.clientId || "",
+            clientSecret: data.clientSecret || "",
             APIKey: data.APIKey,
             fallbackOwnData: data.fallbackOwnData || false,
             feederSerial: data.feederSerial || '', 

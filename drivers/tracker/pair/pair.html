@@ -20,14 +20,37 @@
 
         <!-- OpenSky Credentials (Initially Hidden) -->
         <div id="credentialsContainer" style="display: none;">
-            <label class="settings-item-description" data-i18n="pair.username">Username (optional)</label>
+            <label class="settings-item-description" data-i18n="pair.authMethod">Authentication</label>
             <div class="settings-itemgroup">
-                <input id="username" type="text" value="">
+                <select id="authMethod" onchange="authMethodSelected()">
+                    <option value="oauth2" data-i18n="pair.authMethodOAuth2" selected>API client (new accounts)</option>
+                    <option value="basic" data-i18n="pair.authMethodBasic">Legacy username/password</option>
+                </select>
+            </div>
+            <p class="settings-item-description" data-i18n="pair.authMethodHint">New OpenSky accounts (mid-March 2025 and later) must use an API client. Older accounts may still use username/password.</p>
+
+            <div id="oauthFields">
+                <label class="settings-item-description" data-i18n="pair.clientId">API client ID</label>
+                <div class="settings-itemgroup">
+                    <input id="clientId" type="text" value="">
+                </div>
+
+                <label class="settings-item-description" data-i18n="pair.clientSecret">API client secret</label>
+                <div class="settings-itemgroup">
+                    <input id="clientSecret" type="password" value="">
+                </div>
             </div>
 
-            <label class="settings-item-description" data-i18n="pair.password">Password (optional)</label>
-            <div class="settings-itemgroup">
-                <input id="password" type="password" value="">
+            <div id="basicFields">
+                <label class="settings-item-description" data-i18n="pair.username">Username (optional)</label>
+                <div class="settings-itemgroup">
+                    <input id="username" type="text" value="">
+                </div>
+
+                <label class="settings-item-description" data-i18n="pair.password">Password (optional)</label>
+                <div class="settings-itemgroup">
+                    <input id="password" type="password" value="">
+                </div>
             </div>
 
             <!-- Fallback to own data -->

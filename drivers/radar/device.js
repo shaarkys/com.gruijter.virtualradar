@@ -167,8 +167,36 @@ class RadarDevice extends Homey.Device {
   }
 
   // This method is called when the user has changed the device's settings in Homey.
-  async onSettings(newSettingsObj, oldSettingsObj, changedKeysArr) {
+  // SDK v3 passes an object: { oldSettings, newSettings, changedKeys }
+  async onSettings({ oldSettings, newSettings, changedKeys }) {
     try {
+      const maskVal = (val) => {
+        if (!val) return "false";
+        const str = String(val);
+        if (str.length <= 2) return `${str.length}*`;
+        return `${str.length}*${str.slice(-2)}`;
+      };
+
+      const currentSettings = this.getSettings();
+      const mergedSettings = { ...currentSettings, ...(oldSettings || {}), ...(newSettings || {}) };
+      const authMethod = (newSettings?.authMethod ?? mergedSettings.authMethod ?? "oauth2").toLowerCase();
+      const resolvedClientId = newSettings?.clientId ?? mergedSettings.clientId;
+      const resolvedClientSecret = newSettings?.clientSecret ?? mergedSettings.clientSecret;
+      const resolvedUsername = newSettings?.username ?? mergedSettings.username;
+      const resolvedPassword = newSettings?.password ?? mergedSettings.password;
+
+      this.log(
+        `[settings] changedKeys=${(changedKeys || []).join(",")}; service=${mergedSettings.service}; authMethod=${authMethod}; clientId=${maskVal(resolvedClientId)}; clientSecret=${maskVal(resolvedClientSecret)}; username=${maskVal(resolvedUsername)}; password=${maskVal(resolvedPassword)}; newKeys=${Object.keys(newSettings || {}).join(",")}`
+      );
+
+      if (mergedSettings.service === "openSky") {
+        if (authMethod === "oauth2" && (!resolvedClientId || !resolvedClientSecret)) {
+          throw new Error("Please enter both API client ID and secret for OpenSky OAuth2 authentication.");
+        }
+        if (authMethod === "basic" && (!resolvedUsername || !resolvedPassword)) {
+          throw new Error("Please enter both username and password for OpenSky legacy authentication.");
+        }
+      }
       // First stop polling the device, then start init after a short delay
       clearInterval(this.intervalIdDevicePoll);
       this.log("radar device settings changed");

@@ -1745,6 +1745,68 @@
               "value": ""
             },
             {
+              "id": "authMethod",
+              "type": "dropdown",
+              "label": {
+                "en": "Authentication",
+                "nl": "Authenticatie"
+              },
+              "hint": {
+                "en": "New OpenSky accounts must use an API client (OAuth2). Legacy accounts can still use username/password for now.",
+                "nl": "Nieuwe OpenSky accounts moeten een API client (OAuth2) gebruiken. Legacy accounts kunnen voorlopig nog gebruikersnaam/wachtwoord gebruiken."
+              },
+              "values": [
+                {
+                  "id": "oauth2",
+                  "label": {
+                    "en": "API client (new accounts)",
+                    "nl": "API client (nieuwe accounts)"
+                  }
+                },
+                {
+                  "id": "basic",
+                  "label": {
+                    "en": "Legacy username/password",
+                    "nl": "Legacy gebruikersnaam/wachtwoord"
+                  }
+                },
+                {
+                  "id": "none",
+                  "label": {
+                    "en": "No authentication (limited)",
+                    "nl": "Geen authenticatie (beperkt)"
+                  }
+                }
+              ],
+              "value": "oauth2"
+            },
+            {
+              "id": "clientId",
+              "type": "text",
+              "label": {
+                "en": "API client ID",
+                "nl": "API client ID"
+              },
+              "hint": {
+                "en": "From OpenSky Account → API client (new accounts since mid-March 2025).",
+                "nl": "Te vinden op OpenSky Account → API client (nieuwe accounts sinds half maart 2025)."
+              },
+              "value": ""
+            },
+            {
+              "id": "clientSecret",
+              "type": "password",
+              "label": {
+                "en": "API client secret",
+                "nl": "API client secret"
+              },
+              "hint": {
+                "en": "Keep this secret; required together with the API client ID.",
+                "nl": "Bewaar deze geheim; vereist samen met de API client ID."
+              },
+              "value": ""
+            },
+            {
               "id": "username",
               "type": "text",
               "label": {
@@ -1752,8 +1814,8 @@
                 "nl": "Gebruikersnaam (optioneel)"
               },
               "hint": {
-                "en": "Enter your OpenSky username if you have one.",
-                "nl": "Voer je OpenSky gebruikersnaam in als je er een hebt."
+                "en": "Legacy OpenSky accounts only. New accounts should use API client authentication.",
+                "nl": "Alleen voor legacy OpenSky accounts. Nieuwe accounts gebruiken API client authenticatie."
               },
               "value": ""
             },
@@ -1765,8 +1827,8 @@
                 "nl": "Wachtwoord (optioneel)"
               },
               "hint": {
-                "en": "Enter your OpenSky password if you have one.",
-                "nl": "Voer je OpenSky wachtwoord in als je er een hebt."
+                "en": "Legacy OpenSky accounts only. New accounts should use API client authentication.",
+                "nl": "Alleen voor legacy OpenSky accounts. Nieuwe accounts gebruiken API client authenticatie."
               },
               "value": ""
             }
@@ -2050,6 +2112,68 @@
               "value": ""
             },
             {
+              "id": "authMethod",
+              "type": "dropdown",
+              "label": {
+                "en": "Authentication",
+                "nl": "Authenticatie"
+              },
+              "hint": {
+                "en": "New OpenSky accounts must use an API client (OAuth2). Legacy accounts can still use username/password for now.",
+                "nl": "Nieuwe OpenSky accounts moeten een API client (OAuth2) gebruiken. Legacy accounts kunnen voorlopig nog gebruikersnaam/wachtwoord gebruiken."
+              },
+              "values": [
+                {
+                  "id": "oauth2",
+                  "label": {
+                    "en": "API client (new accounts)",
+                    "nl": "API client (nieuwe accounts)"
+                  }
+                },
+                {
+                  "id": "basic",
+                  "label": {
+                    "en": "Legacy username/password",
+                    "nl": "Legacy gebruikersnaam/wachtwoord"
+                  }
+                },
+                {
+                  "id": "none",
+                  "label": {
+                    "en": "No authentication (limited)",
+                    "nl": "Geen authenticatie (beperkt)"
+                  }
+                }
+              ],
+              "value": "oauth2"
+            },
+            {
+              "id": "clientId",
+              "type": "text",
+              "label": {
+                "en": "API client ID",
+                "nl": "API client ID"
+              },
+              "hint": {
+                "en": "From OpenSky Account → API client (new accounts since mid-March 2025).",
+                "nl": "Te vinden op OpenSky Account → API client (nieuwe accounts sinds half maart 2025)."
+              },
+              "value": ""
+            },
+            {
+              "id": "clientSecret",
+              "type": "password",
+              "label": {
+                "en": "API client secret",
+                "nl": "API client secret"
+              },
+              "hint": {
+                "en": "Keep this secret; required together with the API client ID.",
+                "nl": "Bewaar deze geheim; vereist samen met de API client ID."
+              },
+              "value": ""
+            },
+            {
               "id": "username",
               "type": "text",
               "label": {
@@ -2057,8 +2181,8 @@
                 "nl": "Gebruikersnaam (optioneel)"
               },
               "hint": {
-                "en": "Enter your OpenSky username if you have one.",
-                "nl": "Voer je OpenSky gebruikersnaam in als je er een hebt."
+                "en": "Legacy OpenSky accounts only. New accounts should use API client authentication.",
+                "nl": "Alleen voor legacy OpenSky accounts. Nieuwe accounts gebruiken API client authenticatie."
               },
               "value": ""
             },
@@ -2070,8 +2194,8 @@
                 "nl": "Wachtwoord (optioneel)"
               },
               "hint": {
-                "en": "Enter your OpenSky password if you have one.",
-                "nl": "Voer je OpenSky wachtwoord in als je er een hebt."
+                "en": "Legacy OpenSky accounts only. New accounts should use API client authentication.",
+                "nl": "Alleen voor legacy OpenSky accounts. Nieuwe accounts gebruiken API client authenticatie."
               },
               "value": ""
             }

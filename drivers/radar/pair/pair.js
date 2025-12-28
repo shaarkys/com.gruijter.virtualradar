@@ -10,12 +10,24 @@ $('#APIKey').prop('disabled', true);
 $('#APIKey').hide();
 $('#APIKeyLabel').hide();
 
+function authMethodSelected() {
+  const authMethod = $('#authMethod').val();
+  if (authMethod === 'oauth2') {
+    $('#oauthFields').show();
+    $('#basicFields').hide();
+  } else {
+    $('#oauthFields').hide();
+    $('#basicFields').show();
+  }
+}
+
 function radarSelected() {
   const selectedRadar = $('#radarSelection').val();
 
   if (selectedRadar === 'openSky') {
     // Show credentials fields for OpenSky
     $('#credentialsContainer').show();
+    authMethodSelected();
     // Hide APIKey for OpenSky
     $('#APIKey').prop('disabled', true);
     $('#APIKey').hide();
@@ -27,6 +39,10 @@ function radarSelected() {
     $('#password').val('');
     $('#fallbackOwnData').prop('checked', false);
     $('#feederSerial').val('');
+    $('#clientId').val('');
+    $('#clientSecret').val('');
+    $('#authMethod').val('oauth2');
+    authMethodSelected();
     // Show APIKey for adsbExchangePaid
     $('#APIKey').prop('disabled', false);
     $('#APIKey').show();
@@ -38,6 +54,10 @@ function radarSelected() {
     $('#password').val('');
     $('#fallbackOwnData').prop('checked', false);
     $('#feederSerial').val('');
+    $('#clientId').val('');
+    $('#clientSecret').val('');
+    $('#authMethod').val('oauth2');
+    authMethodSelected();
     $('#APIKey').prop('disabled', true);
     $('#APIKey').hide();
     $('#APIKeyLabel').hide();
@@ -47,34 +67,43 @@ function radarSelected() {
 // Call radarSelected() when the document is ready
 $(document).ready(function() {
   radarSelected();
+  authMethodSelected();
 });
 
 function testSettings() {
   const data = {
     radarSelection: $('#radarSelection').val(),
+    authMethod: $('#authMethod').val(),
     username: $('#username').val(),
     password: $('#password').val(),
+    clientId: $('#clientId').val(),
+    clientSecret: $('#clientSecret').val(),
     fallbackOwnData: $('#fallbackOwnData').is(':checked'),
     feederSerial: $('#feederSerial').val(),
     APIKey: $('#APIKey').val(),
   };
+
+  if (data.radarSelection === 'openSky') {
+    if (data.authMethod === 'oauth2' && (!data.clientId || !data.clientSecret)) {
+      Homey.alert(__('pair.oauthMissing'), 'error');
+      return;
+    }
+    if (data.authMethod === 'basic' && (!data.username || !data.password)) {
+      Homey.alert(__('pair.basicMissing'), 'error');
+      return;
+    }
+  }
   
   const trackIDSelection = $('#trackIDSelection').val();
   const trackID = $('#trackID').val();
   data[trackIDSelection] = trackID;
 
-  // Remove feederSerial and related fields if not using openSky
   if (data.radarSelection !== 'openSky') {
     delete data.username;
     delete data.password;
-    delete data.fallbackOwnData;
-    delete data.feederSerial;
-  }
-
-  // Remove username and password if not using openSky
-  if (data.radarSelection !== 'openSky') {
-    delete data.username;
-    delete data.password;
+    delete data.clientId;
+    delete data.clientSecret;
+    delete data.authMethod;
     delete data.fallbackOwnData;
     delete data.feederSerial;
   }

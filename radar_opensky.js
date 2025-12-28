@@ -78,8 +78,16 @@ class VirtualRadar {
     this.lastScan = 0; // int Unix timestamp (seconds) for the last radar update.
     this.center = new GeoPoint(this.lat, this.lon);
     this.timeout = 20000; // int Timeout in ms for the http service call
+    const hasOAuthCredentials = settings.clientId && settings.clientSecret;
+    const hasBasicCredentials = settings.username && settings.password;
+    this.authMethod = (settings.authMethod || "").toLowerCase() || (hasOAuthCredentials ? "oauth2" : hasBasicCredentials ? "basic" : "none");
     this.username = settings.username || null;
     this.password = settings.password || null;
+    this.clientId = settings.clientId || null;
+    this.clientSecret = settings.clientSecret || null;
+    this.accessToken = null;
+    this.accessTokenExpiresAt = 0;
+    this._authLogged = false;
     this.apiCredits = null; // Initialize apiCredits
     this.retryAfterSeconds = null; // Initialize retryAfterSeconds
     this.retryTimestamp = null; // Initialize retryTimestamp for cooldown period
@@ -434,11 +442,7 @@ async getAc(ACOpts) {
   // Makes an HTTPS request and returns the JSON data
   async _makeRequest(options) {
     try {
-      const res = await this._makeHttpsRequest(options);
-
-      if (res.statusCode === 403) {
-        throw new Error("Authentication failed. Please check your username and password.");
-      }
+      const res = await this._requestWithAuth(options);
 
       if (res.statusCode === 429) {
         // Rate limit exceeded
@@ -451,7 +455,8 @@ async getAc(ACOpts) {
         throw new Error(`Rate limit exceeded. Retry after ${retryAfter} seconds.`);
       }
 
-      if (res.statusCode !== 200 || !res.headers["content-type"].includes("application/json")) {
+      const contentType = res.headers["content-type"] || "";
+      if (res.statusCode !== 200 || !contentType.includes("application/json")) {
         throw new Error(`Service Error: ${res.statusCode}`);
       }
 
@@ -495,13 +500,121 @@ async getAc(ACOpts) {
     }
   }
 
+  async _getAuthHeader() {
+    if (!this._authLogged) {
+      console.log(
+        `[OpenSky] authMethod=${this.authMethod}, clientId set=${!!this.clientId}, clientSecret set=${!!this.clientSecret}, username set=${!!this.username}, password set=${!!this.password}`
+      );
+      this._authLogged = true;
+    }
+    if (this.authMethod === "oauth2") {
+      if (!this.clientId || !this.clientSecret) {
+        throw new Error("OAuth2 selected but client_id or client_secret is missing.");
+      }
+      const token = await this._getAccessToken();
+      return `Bearer ${token}`;
+    }
+    if (this.authMethod === "basic" && this.username && this.password) {
+      const auth = `${this.username}:${this.password}`;
+      const base64Auth = Buffer.from(auth).toString("base64");
+      return `Basic ${base64Auth}`;
+    }
+    return null;
+  }
+
+  async _getAccessToken() {
+    const aboutToExpire = Date.now() + 60000; // refresh 1 minute before expiry
+    if (this.accessToken && this.accessTokenExpiresAt && aboutToExpire < this.accessTokenExpiresAt) {
+      return this.accessToken;
+    }
+
+    const postData = qs.stringify({
+      grant_type: "client_credentials",
+      client_id: this.clientId,
+      client_secret: this.clientSecret,
+    });
+
+    const options = {
+      hostname: "auth.opensky-network.org",
+      path: "/auth/realms/opensky-network/protocol/openid-connect/token",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": Buffer.byteLength(postData),
+      },
+      skipAuth: true,
+    };
+
+    const res = await this._makeHttpsRequest(options, postData);
+    if (res.statusCode !== 200) {
+      throw new Error(`OAuth token request failed with status ${res.statusCode}`);
+    }
+
+    let tokenBody;
+    try {
+      tokenBody = JSON.parse(res.body);
+    } catch (err) {
+      throw new Error("OAuth token response is not valid JSON");
+    }
+
+    if (!tokenBody.access_token) {
+      throw new Error("OAuth token response missing access_token");
+    }
+
+    const expiresInSeconds = Number(tokenBody.expires_in) || 1800;
+    this.accessToken = tokenBody.access_token;
+    this.accessTokenExpiresAt = Date.now() + (expiresInSeconds - 30) * 1000; // refresh a bit early
+    return this.accessToken;
+  }
+
+  _invalidateAccessToken() {
+    this.accessToken = null;
+    this.accessTokenExpiresAt = 0;
+  }
+
+  async _requestWithAuth(options) {
+    const baseHeaders = options.headers || {};
+    const headers = { ...baseHeaders };
+    const opts = { ...options, headers };
+
+    try {
+      const authHeader = await this._getAuthHeader();
+      if (authHeader) {
+        opts.headers.Authorization = authHeader;
+      }
+    } catch (authError) {
+      return Promise.reject(authError);
+    }
+
+    let res = await this._makeHttpsRequest(opts);
+
+    if (res.statusCode === 401 && this.authMethod === "oauth2") {
+      // Token might be expired; try once more after refreshing
+      this._invalidateAccessToken();
+      const retryHeaders = { ...baseHeaders };
+      const retryOpts = { ...options, headers: retryHeaders };
+      const authHeader = await this._getAuthHeader();
+      if (authHeader) {
+        retryOpts.headers.Authorization = authHeader;
+      }
+      res = await this._makeHttpsRequest(retryOpts);
+    }
+
+    if (res.statusCode === 401 || res.statusCode === 403) {
+      throw new Error("Authentication failed. Please verify your OpenSky credentials or OAuth client settings.");
+    }
+
+    return res;
+  }
+
   _makeHttpsRequest(options, postData, timeout) {
     return new Promise((resolve, reject) => {
       const opts = { ...options }; // Clone the options to avoid mutation
       opts.timeout = timeout || this.timeout;
+      opts.headers = { ...(opts.headers || {}) };
 
-      // Add authentication if username and password are provided
-      if (this.username && this.password) {
+      // Add authentication if username and password are provided for basic auth
+      if (!opts.skipAuth && this.authMethod === "basic" && this.username && this.password && !opts.headers.Authorization) {
         const auth = `${this.username}:${this.password}`;
         const base64Auth = Buffer.from(auth).toString("base64");
         opts.headers["Authorization"] = `Basic ${base64Auth}`;
