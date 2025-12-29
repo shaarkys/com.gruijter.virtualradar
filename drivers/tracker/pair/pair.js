@@ -109,8 +109,9 @@ function testSettings() {
 		if (error) {
 			Homey.alert(error.message, 'error');
 		} else {
-			Homey.alert(`${__('pair.success')} ${result}`, 'info');
-			const device = JSON.parse(result);
+			const device = typeof result === 'string' ? JSON.parse(result) : result;
+			const deviceName = device && device.name ? ` ${device.name}` : '';
+			Homey.alert(`${__('pair.success')}${deviceName}`, 'info');
 			Homey.addDevice(device, (err, res) => {
 				if (err) { Homey.alert(err, 'error'); return; }
 				setTimeout(() => {

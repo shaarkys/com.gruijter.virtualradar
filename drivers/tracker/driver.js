@@ -111,7 +111,7 @@ class TrackerDriver extends Homey.Driver {
         const radar = new Radar[device.settings.service](opts);
         await radar.getAc(opts); // Testing settings
 
-        return JSON.stringify(device); // Success: Return the device data
+        return device; // Success: Return the device data
       } catch (error) {
         this.error("Pair error", error);
         throw error; // Failure: Throw the error to be handled by Homey
