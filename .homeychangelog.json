@@ -28,5 +28,8 @@
   },
   "3.3.0": {
     "en": "New logo + OpenSKY OAuth2 support."
+  },
+  "3.3.1": {
+    "en": "Fix error during pairing"
   }
 }
