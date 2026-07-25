@@ -144,6 +144,15 @@
           "example": "Eurocopter EC135 P2+"
         },
         {
+          "name": "type",
+          "type": "string",
+          "title": {
+            "en": "ICAO type code",
+            "nl": "ICAO-typecode"
+          },
+          "example": "B738"
+        },
+        {
           "name": "op",
           "type": "string",
           "title": {
@@ -332,6 +341,15 @@
             "nl": "model"
           },
           "example": "Eurocopter EC135 P2+"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "title": {
+            "en": "ICAO type code",
+            "nl": "ICAO-typecode"
+          },
+          "example": "B738"
         },
         {
           "name": "op",
@@ -524,6 +542,15 @@
           "example": "Eurocopter EC135 P2+"
         },
         {
+          "name": "type",
+          "type": "string",
+          "title": {
+            "en": "ICAO type code",
+            "nl": "ICAO-typecode"
+          },
+          "example": "B738"
+        },
+        {
           "name": "op",
           "type": "string",
           "title": {
@@ -714,6 +741,15 @@
           "example": "Eurocopter EC135 P2+"
         },
         {
+          "name": "type",
+          "type": "string",
+          "title": {
+            "en": "ICAO type code",
+            "nl": "ICAO-typecode"
+          },
+          "example": "B738"
+        },
+        {
           "name": "op",
           "type": "string",
           "title": {
@@ -902,6 +938,15 @@
             "nl": "model"
           },
           "example": "Eurocopter EC135 P2+"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "title": {
+            "en": "ICAO type code",
+            "nl": "ICAO-typecode"
+          },
+          "example": "B738"
         },
         {
           "name": "op",

@@ -163,6 +163,7 @@ class VirtualRadar {
 		to: "",
 		op: "",
 		mdl: "",
+		type: state.type || "",
 		mil: false,
 	  };
   

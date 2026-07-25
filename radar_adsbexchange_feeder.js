@@ -121,6 +121,7 @@ class VirtualRadar {
 			to: state.to,
 			op: state.opicao,
 			mdl: state.type,
+			type: state.type,
 			dst: Math.round(Number(state.dst) * 1.852 * 1000),
 			mil: state.mil === '1',
 		};

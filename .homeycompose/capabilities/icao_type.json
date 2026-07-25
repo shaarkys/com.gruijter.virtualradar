@@ -1,0 +1,15 @@
+{
+  "type": "string",
+  "title": {
+    "en": "ICAO type code",
+    "nl": "ICAO-typecode"
+  },
+  "desc": {
+    "en": "ICAO aircraft type designator",
+    "nl": "ICAO-typeaanduiding van het vliegtuig"
+  },
+  "getable": true,
+  "setable": false,
+  "insights": false,
+  "icon": "./assets/mdl.svg"
+}

@@ -15,6 +15,7 @@
     "alt",
     "spd",
     "to",
+    "icao_type",
     "dst",
     "ttime",
     "api_credits"
@@ -54,6 +55,7 @@
           "alt",
           "spd",
           "to",
+          "icao_type",
           "dst",
           "ttime",
           "api_credits"
@@ -65,6 +67,7 @@
             "alt": "./assets/alt.svg",
             "spd": "./assets/spd.svg",
             "to": "./assets/to.svg",
+            "icao_type": "./assets/mdl.svg",
             "dst": "./assets/dst.svg",
             "ttime": "./assets/ttime.svg",
             "api_credits": "./assets/api_credits.svg"

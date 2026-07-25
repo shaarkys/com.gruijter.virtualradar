@@ -49,6 +49,7 @@ function getTokens(ac) {
     to: ac.to || "-", // the destination airport
     op: ac.op || "-", // the operator
     mdl: ac.mdl || "-", // the aircraft model (and make?)
+    type: ac.type || "-", // the ICAO aircraft type designator
     mil: ac.mil || false, // true if known military aircraft
     dst: ac.dst / 1000 || 0, // The distance to the aircraft in kilometres.
     loc: ac.locString || "-", // the geo location Country-Area-City
@@ -71,6 +72,9 @@ class RadarDevice extends Homey.Device {
     if (this.hasCapability("measure_ac_number") === false) {
       await this.addCapability("measure_ac_number");
     }
+    if (this.hasCapability("icao_type") === false) {
+      await this.addCapability("icao_type");
+    }
 
     // Check and add the api_credits capability dynamically
     if (!this.hasCapability("api_credits")) {
@@ -80,12 +84,12 @@ class RadarDevice extends Homey.Device {
     this.radarServices = {
       openSky: {
         name: "openSky",
-        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "icao_type", "dst", "alt", "oc"],
         APIKey: false,
       },
       adsbExchangeFeeder: {
         name: "adsbExchangePaid",
-        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "icao_type", "dst", "alt", "oc"],
         APIKey: true,
       },
     };
@@ -298,6 +302,7 @@ class RadarDevice extends Homey.Device {
         this.setCapability("op", nearestAc.op || "-");
         this.setCapability("to", nearestAc.to || "-");
         this.setCapability("mdl", nearestAc.mdl || "-");
+        this.setCapability("icao_type", nearestAc.type || "-");
       } else {
         this.setCapability("dst", 0);
         this.setCapability("alt", 0);
@@ -305,6 +310,7 @@ class RadarDevice extends Homey.Device {
         this.setCapability("op", "-");
         this.setCapability("to", "-");
         this.setCapability("mdl", "-");
+        this.setCapability("icao_type", "-");
       }
 
       // Limit the size of acList to prevent memory buildup

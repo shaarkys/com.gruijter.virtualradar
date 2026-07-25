@@ -33,12 +33,12 @@ class TrackerDriver extends Homey.Driver {
     this.radarServices = {
       openSky: {
         name: "openSky",
-        capabilities: ["onoff", "loc", "brng", "alt", "spd", "to", "dst", "ttime"],
+        capabilities: ["onoff", "loc", "brng", "alt", "spd", "to", "icao_type", "dst", "ttime"],
         APIKey: false,
       },
       adsbExchangeFeeder: {
         name: "adsbExchangePaid",
-        capabilities: ["onoff", "loc", "brng", "alt", "spd", "to", "dst", "ttime"],
+        capabilities: ["onoff", "loc", "brng", "alt", "spd", "to", "icao_type", "dst", "ttime"],
         APIKey: true,
       },
       // adsbExchangePaid: {

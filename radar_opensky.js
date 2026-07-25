@@ -183,6 +183,7 @@ async getAcInRange() {
       ac.to = ac.to || "N/A";
       ac.op = ac.op || "N/A";
       ac.mdl = ac.mdl || "N/A";
+      ac.type = ac.type || "N/A";
 
       return ac;
     });
@@ -364,12 +365,14 @@ async getAc(ACOpts) {
       if (!jsonData) {
         ac.reg = "N/A";
         ac.mdl = "N/A";
+        ac.type = "N/A";
         return Promise.resolve(ac);
       }
 
       // Enrich aircraft details
       ac.reg = jsonData.registration || "N/A";
       ac.mdl = jsonData.model || "N/A";
+      ac.type = jsonData.typecode || "N/A";
       ac.op = jsonData.operatorIcao || ac.op;
       return Promise.resolve(ac);
     } catch (error) {
@@ -401,6 +404,7 @@ async getAc(ACOpts) {
       to: "",
       op: "",
       mdl: "",
+      type: "",
       mil: false,
     };
 

@@ -101,6 +101,7 @@ function getTokens(ac) {
     to: ac.to || "-", // the destination airport
     op: ac.op || "-", // the operator
     mdl: ac.mdl || "-", // the aircraft model (and make?)
+    type: ac.type || "-", // the ICAO aircraft type designator
     mil: ac.mil || false, // true if known military aircraft
     dst: ac.dst / 1000 || 0, // The distance to the aircraft in kilometres.
     loc: ac.locString || "-", // the geo location Country-Area-City
@@ -145,6 +146,9 @@ class Tracker extends Homey.Device {
 
     // Initialize api_credits capability
     this.setCapability("api_credits", 0);
+    if (this.hasCapability("icao_type") === false) {
+      await this.addCapability("icao_type");
+    }
 
     this.radarServices.openSky.capabilities.forEach((capability) => {
       this.registerCapabilityListener(capability, async (value) => {
@@ -378,6 +382,7 @@ class Tracker extends Homey.Device {
         this.setCapability("alt", 0);
         this.setCapability("spd", 0);
         this.setCapability("to", "-");
+        this.setCapability("icao_type", "-");
         this.setCapability("dst", 0);
         this.setCapability("tsecs", "-");
         return;
@@ -391,6 +396,7 @@ class Tracker extends Homey.Device {
       this.setCapability("alt", alt);
       this.setCapability("spd", ac.spd);
       this.setCapability("to", ac.to || "-");
+      this.setCapability("icao_type", ac.type || "-");
       this.setCapability("dst", dst || 0);
       this.setCapability("ttime", toHHMM(ac.tsecs));
     } catch (error) {

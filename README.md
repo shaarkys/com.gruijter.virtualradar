@@ -54,6 +54,7 @@ requires an API key that you can get for free when you feed data from your own A
 - reg: The registration
 - call: The callsign
 - model: A description of the aircraft's model. Usually also includes the manufacturer's name.
+- type: The aircraft model's ICAO type designator (for example A320 or B738).
 - oprtr: The name of the aircraft's operator.
 - from: The code and name of the departure airport.
 - to: The code and name of the arrival airport.
