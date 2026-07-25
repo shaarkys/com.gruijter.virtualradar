@@ -49,7 +49,7 @@ function getTokens(ac) {
     to: ac.to || "-", // the destination airport
     op: ac.op || "-", // the operator
     mdl: ac.mdl || "-", // the aircraft model (and make?)
-    type: ac.type || "-", // the ICAO aircraft type designator
+    type: ac.type || "-",
     mil: ac.mil || false, // true if known military aircraft
     dst: ac.dst / 1000 || 0, // The distance to the aircraft in kilometres.
     loc: ac.locString || "-", // the geo location Country-Area-City
