@@ -1,9 +1,16 @@
 {
 	"pair": {
 		"title": "Add a virtual radar",
-		"instructions": "Select the source of the information. OpenSky is free but limited; new OpenSky accounts must use an API client (OAuth2 client credentials) while legacy accounts can still use username/password for now. Other services require an account.",
+		"instructions": "Select the source of the information. OpenSky requires internet access and an API client. Local ADS-B feeder connects directly over your LAN without OpenSky. ADS-B Exchange requires an account.",
 		"radarSelection": "Select the radar source",
 		"openSky": "openSky",
+		"localFeeder": "Local ADS-B feeder (LAN)",
+		"localFeederHint": "Connect directly to dump1090, dump1090-fa, PiAware/SkyAware, readsb, tar1090, or Virtual Radar Server on the same network. Enter a base address such as http://192.168.1.50 or a complete JSON URL. The app automatically tries common aircraft.json paths. Registration, model, and ICAO type are available only when your feeder includes them.",
+		"localFeederUrl": "Local feeder URL or IP address",
+		"localFeederUrlMissing": "Enter the local ADS-B feeder URL or IP address.",
+		"localFeederUnits": "Local feeder units",
+		"localFeederUnitsAviation": "Feet, knots, feet/minute (standard)",
+		"localFeederUnitsMetric": "Metres, km/h, metres/second",
 		"adsbExchangeFeeder": "ADSB Exchange (feeder)",
 		"adsbExchangePaid": "ADSB Exchange (paid)",
 		"authMethod": "Authentication",

@@ -165,6 +165,12 @@ class VirtualRadar {
 		mdl: "",
 		type: state.type || "",
 		mil: false,
+		stateSource: "ADS-B Exchange paid API",
+		positionSource: state.mlat === "1" ? "MLAT" : state.tisb === "1" ? "TIS-B" : "ADS-B",
+		metadataSource: state.type ? "ADS-B Exchange paid API" : "ADS-B Exchange paid API:no-metadata",
+		metadataSources: {
+		  icaoType: state.type ? "ADS-B Exchange paid API" : "",
+		},
 	  };
   
 	  // Validate latitude and longitude

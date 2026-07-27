@@ -187,6 +187,57 @@
     {
       "type": "group",
       "label": {
+        "en": "Local ADS-B feeder settings",
+        "nl": "Instellingen lokale ADS-B feeder"
+      },
+      "children": [
+        {
+          "id": "localFeederUrl",
+          "type": "text",
+          "label": {
+            "en": "Local feeder URL or IP address",
+            "nl": "Lokale feeder-URL of IP-adres"
+          },
+          "hint": {
+            "en": "Used only for the Local ADS-B feeder service. Enter a base address such as http://192.168.1.50 or a complete aircraft.json URL. Common dump1090, PiAware/SkyAware, readsb, tar1090, and Virtual Radar Server paths are detected automatically.",
+            "nl": "Alleen gebruikt voor de dienst Lokale ADS-B feeder. Voer een basisadres in, bijvoorbeeld http://192.168.1.50, of een volledige aircraft.json-URL. Gangbare paden van dump1090, PiAware/SkyAware, readsb, tar1090 en Virtual Radar Server worden automatisch herkend."
+          },
+          "value": ""
+        },
+        {
+          "id": "localFeederUnits",
+          "type": "dropdown",
+          "label": {
+            "en": "Local feeder units",
+            "nl": "Eenheden van lokale feeder"
+          },
+          "hint": {
+            "en": "Standard dump1090/readsb/VRS feeds use feet, knots, and feet per minute. Select metric only for a custom feed that already returns metres, km/h, and metres per second.",
+            "nl": "Standaardfeeds van dump1090/readsb/VRS gebruiken voet, knopen en voet per minuut. Selecteer metrisch alleen voor een aangepaste feed die al meters, km/u en meters per seconde retourneert."
+          },
+          "values": [
+            {
+              "id": "aviation",
+              "label": {
+                "en": "Feet, knots, feet/minute (standard)",
+                "nl": "Voet, knopen, voet/minuut (standaard)"
+              }
+            },
+            {
+              "id": "metric",
+              "label": {
+                "en": "Metres, km/h, metres/second",
+                "nl": "Meter, km/u, meter/seconde"
+              }
+            }
+          ],
+          "value": "aviation"
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
         "en": "Radar settings",
         "nl": "Radar instellingen"
       },

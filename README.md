@@ -77,6 +77,23 @@ You can filter the results with a number of options:
 ![image][radar-types-image]
 ![image][radar-filters-image]
 
+### Local ADS-B feeder (LAN) ###
+Radar and Tracker devices can read live aircraft directly from a feeder on the
+same network, without OpenSky authentication or API credits. Select `Local ADS-B
+feeder (LAN)` while pairing and enter either:
+
+* a base address, for example `http://192.168.1.50` or `http://feeder.local`;
+* a web-interface address such as `http://192.168.1.50/tar1090`; or
+* a complete JSON URL such as `http://192.168.1.50/data/aircraft.json`.
+
+The app automatically tries the common dump1090, dump1090-fa, PiAware/SkyAware,
+readsb, tar1090, and Virtual Radar Server paths. Standard feeds use feet, knots,
+and feet per minute; select metric units only if a custom feeder already returns
+metric values. Live position, altitude, speed, track, and squawk work without
+an external metadata API. Registration, model, operator, and ICAO type are
+shown only when the local feeder includes those fields. Do not expose the
+feeder URL to the public internet.
+
 ### Tracker setup ###
 You can setup multiple trackers. For each tracker you can set:
 * home location (long, lat). This is used to calculate the distance token.
@@ -93,6 +110,8 @@ If you really like the app you can buy me a beer.
 
 This app uses:
 * ADSBexchange for virtual radar data: https://www.adsbexchange.com/legal-and-privacy/
+* ADSBDB for aircraft metadata: https://www.adsbdb.com/
+* HexDB as fallback for aircraft metadata: https://hexdb.io/
 * OpenSky for virtual radar data: https://opensky-network.org/about/terms-of-use
 * OpenStreetMap for reverse geocoding: https://osm.org/copyright
 

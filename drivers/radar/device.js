@@ -21,6 +21,8 @@ along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/
 
 const Homey = require("homey");
 const Radar = require("../../radar");
+const { getCredentialDiagnostics } = require("../../lib/credentialDiagnostics");
+const { formatAircraftDiagnostic } = require("../../lib/aircraftDiagnostics");
 // const util = require('util');
 
 function getTokens(ac) {
@@ -87,10 +89,15 @@ class RadarDevice extends Homey.Device {
         capabilities: ["measure_ac_number", "to", "op", "mdl", "icao_type", "dst", "alt", "oc"],
         APIKey: false,
       },
-      adsbExchangeFeeder: {
+      adsbExchangePaid: {
         name: "adsbExchangePaid",
         capabilities: ["measure_ac_number", "to", "op", "mdl", "icao_type", "dst", "alt", "oc"],
         APIKey: true,
+      },
+      localFeeder: {
+        name: "localFeeder",
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "icao_type", "dst", "alt", "oc"],
+        APIKey: false,
       },
     };
 
@@ -106,13 +113,15 @@ class RadarDevice extends Homey.Device {
     // Initialize api_credits capability
     this.setCapability("api_credits", 0);
 
-    this.radarServices.openSky.capabilities.forEach((capability) => {
-      this.registerCapabilityListener(capability, async (value) => {
-        this.log(`Capability ${capability} changed to ${value}`);
-        // Add your logic to handle the capability change
-        return Promise.resolve();
+    if (!this.capabilityListenersRegistered) {
+      this.radarServices.openSky.capabilities.forEach((capability) => {
+        this.registerCapabilityListener(capability, async (value) => {
+          this.log(`Capability ${capability} changed to ${value}`);
+          return Promise.resolve();
+        });
       });
-    });
+      this.capabilityListenersRegistered = true;
+    }
 
     this.intervalIdDevicePoll = setInterval(async () => {
       try {
@@ -174,13 +183,6 @@ class RadarDevice extends Homey.Device {
   // SDK v3 passes an object: { oldSettings, newSettings, changedKeys }
   async onSettings({ oldSettings, newSettings, changedKeys }) {
     try {
-      const maskVal = (val) => {
-        if (!val) return "false";
-        const str = String(val);
-        if (str.length <= 2) return `${str.length}*`;
-        return `${str.length}*${str.slice(-2)}`;
-      };
-
       const currentSettings = this.getSettings();
       const mergedSettings = { ...currentSettings, ...(oldSettings || {}), ...(newSettings || {}) };
       const authMethod = (newSettings?.authMethod ?? mergedSettings.authMethod ?? "oauth2").toLowerCase();
@@ -189,9 +191,13 @@ class RadarDevice extends Homey.Device {
       const resolvedUsername = newSettings?.username ?? mergedSettings.username;
       const resolvedPassword = newSettings?.password ?? mergedSettings.password;
 
-      this.log(
-        `[settings] changedKeys=${(changedKeys || []).join(",")}; service=${mergedSettings.service}; authMethod=${authMethod}; clientId=${maskVal(resolvedClientId)}; clientSecret=${maskVal(resolvedClientSecret)}; username=${maskVal(resolvedUsername)}; password=${maskVal(resolvedPassword)}; newKeys=${Object.keys(newSettings || {}).join(",")}`
-      );
+      this.log(`[settings] service=${mergedSettings.service}; ${getCredentialDiagnostics({
+        authMethod,
+        clientId: resolvedClientId,
+        clientSecret: resolvedClientSecret,
+        username: resolvedUsername,
+        password: resolvedPassword,
+      })}`);
 
       if (mergedSettings.service === "openSky") {
         if (authMethod === "oauth2" && (!resolvedClientId || !resolvedClientSecret)) {
@@ -200,6 +206,9 @@ class RadarDevice extends Homey.Device {
         if (authMethod === "basic" && (!resolvedUsername || !resolvedPassword)) {
           throw new Error("Please enter both username and password for OpenSky legacy authentication.");
         }
+      }
+      if (mergedSettings.service === "localFeeder") {
+        new Radar.localFeeder(mergedSettings);
       }
       // First stop polling the device, then start init after a short delay
       clearInterval(this.intervalIdDevicePoll);
@@ -273,7 +282,9 @@ class RadarDevice extends Homey.Device {
         const knownAc = !!acListAc; // Boolean check if aircraft exists in acList
         const tokens = getTokens(ac);
         if (!knownAc) {
-          this.log(`icao: '${ac.icao}' entering airspace!`);
+          this.log(formatAircraftDiagnostic("enter", ac, this.settings.service, {
+            trackedSeconds: newAcList[index].tsecs,
+          }));
           this.flowCards.acEnteringTrigger.trigger(this, tokens).catch(this.error);
         }
         this.flowCards.acPresentTrigger.trigger(this, tokens).catch(this.error);
@@ -282,8 +293,10 @@ class RadarDevice extends Homey.Device {
       // Check for leaving airspace
       const leftAcList = this.acList.filter((ac) => !newAcList.some((tac) => tac.icao === ac.icao));
       leftAcList.forEach((ac) => {
-        this.log(`icao: '${ac.icao}', leaving airspace!`);
         ac.tsecs = Math.round((Date.now() - ac.trackStart) / 1000) || 0;
+        this.log(formatAircraftDiagnostic("leave", ac, this.settings.service, {
+          trackedSeconds: ac.tsecs,
+        }));
         const tokens = getTokens(ac);
         this.flowCards.acLeftTrigger.trigger(this, tokens).catch(this.error);
       });

@@ -13,6 +13,7 @@
 		<div class="settings-itemgroup">
 			<select id="radarSelection" onchange="radarSelected()">
 				<option value="openSky" data-i18n="pair.openSky" selected>openSky</option>
+				<option value="localFeeder" data-i18n="pair.localFeeder">Local ADS-B feeder (LAN)</option>
 				<option value="adsbExchangePaid" data-i18n="pair.adsbExchangePaid">adsbExchangePaid</option>
 				<!-- <option value="Generic" data-i18n="pair.genericMeter">Generic</option> -->
 			</select>
@@ -66,6 +67,23 @@
                 <input id="feederSerial" type="text" value="">
             </div>
 
+        </div>
+
+        <div id="localFeederContainer" style="display: none;">
+            <p class="settings-item-description" data-i18n="pair.localFeederHint">Connect directly to dump1090, PiAware/SkyAware, readsb, tar1090, or Virtual Radar Server on the same network. Enter a base address or a complete aircraft.json URL; common paths are detected automatically.</p>
+
+            <label class="settings-item-description" data-i18n="pair.localFeederUrl">Local feeder URL or IP address</label>
+            <div class="settings-itemgroup">
+                <input id="localFeederUrl" type="text" value="" placeholder="http://192.168.1.50">
+            </div>
+
+            <label class="settings-item-description" data-i18n="pair.localFeederUnits">Local feeder units</label>
+            <div class="settings-itemgroup">
+                <select id="localFeederUnits">
+                    <option value="aviation" data-i18n="pair.localFeederUnitsAviation" selected>Feet, knots, feet/minute (standard)</option>
+                    <option value="metric" data-i18n="pair.localFeederUnitsMetric">Metres, km/h, metres/second</option>
+                </select>
+            </div>
         </div>
 
 		<label class="settings-item-description" id="APIKeyLabel" data-i18n="pair.APIKey">API Key</label>

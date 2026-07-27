@@ -23,6 +23,7 @@ along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/
 const Homey = require("homey");
 const crypto = require("crypto");
 const Radar = require("../../radar");
+const { getCredentialDiagnostics } = require("../../lib/credentialDiagnostics");
 // const util = require('util');
 
 class TrackerDriver extends Homey.Driver {
@@ -36,10 +37,15 @@ class TrackerDriver extends Homey.Driver {
         capabilities: ["onoff", "loc", "brng", "alt", "spd", "to", "icao_type", "dst", "ttime"],
         APIKey: false,
       },
-      adsbExchangeFeeder: {
+      adsbExchangePaid: {
         name: "adsbExchangePaid",
         capabilities: ["onoff", "loc", "brng", "alt", "spd", "to", "icao_type", "dst", "ttime"],
         APIKey: true,
+      },
+      localFeeder: {
+        name: "localFeeder",
+        capabilities: ["onoff", "loc", "brng", "alt", "spd", "to", "icao_type", "dst", "ttime"],
+        APIKey: false,
       },
       // adsbExchangePaid: {
       // 	name: 'adsbExchangePaid',
@@ -70,9 +76,13 @@ class TrackerDriver extends Homey.Driver {
               throw new Error("OpenSky legacy authentication selected, but username or password is missing.");
             }
           }
-          this.log(
-            `[Driver:tracker] Auth method: ${authMethod}; clientId set: ${!!data.clientId}; username set: ${!!data.username}`
-          );
+          this.log(`[Driver:tracker] ${getCredentialDiagnostics({
+            authMethod,
+            clientId: data.clientId,
+            clientSecret: data.clientSecret,
+            username: data.username,
+            password: data.password,
+          })}`);
         }
 
         // Generate a unique id for the device
@@ -93,7 +103,7 @@ class TrackerDriver extends Homey.Driver {
             onlyGnd: false,
             onlyAir: true,
             service: this.radarServices[service].name,
-            authMethod: data.authMethod || "oauth2",
+            authMethod: service === "openSky" ? data.authMethod || "oauth2" : "none",
             username: data.username || "",
             password: data.password || "",
             clientId: data.clientId || "",
@@ -102,6 +112,8 @@ class TrackerDriver extends Homey.Driver {
             fallbackOwnData: data.fallbackOwnData || false,
             feederSerial: data.feederSerial || '', 
             failoverToOwnData: data.failoverToOwnData || false,
+            localFeederUrl: data.localFeederUrl || "",
+            localFeederUnits: data.localFeederUnits || "aviation",
           },
           capabilities: this.radarServices[service].capabilities,
         };

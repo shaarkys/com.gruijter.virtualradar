@@ -23,6 +23,7 @@ along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/
 const Homey = require("homey");
 const crypto = require("crypto");
 const Radar = require("../../radar");
+const { getCredentialDiagnostics } = require("../../lib/credentialDiagnostics");
 // const util = require('util');
 
 class RadarDriver extends Homey.Driver {
@@ -40,6 +41,11 @@ class RadarDriver extends Homey.Driver {
         name: "adsbExchangePaid",
         capabilities: ["measure_ac_number", "to", "op", "mdl", "icao_type", "dst", "alt", "oc"],
         APIKey: true,
+      },
+      localFeeder: {
+        name: "localFeeder",
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "icao_type", "dst", "alt", "oc"],
+        APIKey: false,
       },
       // adsbExchangePaid: {
       // 	name: 'adsbExchangePaid',
@@ -70,9 +76,13 @@ class RadarDriver extends Homey.Driver {
               throw new Error("OpenSky legacy authentication selected, but username or password is missing.");
             }
           }
-          this.log(
-            `[Driver:radar] Auth method: ${authMethod}; clientId set: ${!!data.clientId}; username set: ${!!data.username}`
-          );
+          this.log(`[Driver:radar] ${getCredentialDiagnostics({
+            authMethod,
+            clientId: data.clientId,
+            clientSecret: data.clientSecret,
+            username: data.username,
+            password: data.password,
+          })}`);
         }
 
         // Generate a unique id for the device
@@ -92,7 +102,7 @@ class RadarDriver extends Homey.Driver {
             onlyGnd: false,
             onlyAir: true,
             service: this.radarServices[service].name,
-            authMethod: data.authMethod || "oauth2",
+            authMethod: service === "openSky" ? data.authMethod || "oauth2" : "none",
             username: data.username || "",
             password: data.password || "",
             clientId: data.clientId || "",
@@ -101,6 +111,8 @@ class RadarDriver extends Homey.Driver {
             fallbackOwnData: data.fallbackOwnData || false,
             feederSerial: data.feederSerial || '', 
             failoverToOwnData: data.failoverToOwnData || false,
+            localFeederUrl: data.localFeederUrl || "",
+            localFeederUnits: data.localFeederUnits || "aviation",
           },
           capabilities: this.radarServices[service].capabilities,
         };

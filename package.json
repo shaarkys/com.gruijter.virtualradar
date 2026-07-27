@@ -4,7 +4,7 @@
   "description": "Homey app to get ADS-B flightdata",
   "main": "app.js",
   "scripts": {
-    "test": "node test/test.js",
+    "test": "node test/radar_opensky.test.js && node test/radar_local_feeder.test.js",
     "generate-docs": "jsdoc --configure .jsdoc.json --verbose"
   },
   "repository": {

@@ -23,6 +23,18 @@ along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/
 const https = require("https");
 const qs = require("querystring");
 const GeoPoint = require("geopoint");
+const { getCredentialDiagnostics } = require("./lib/credentialDiagnostics");
+
+const AIRCRAFT_METADATA_CACHE_TTL = 24 * 60 * 60 * 1000;
+const AIRCRAFT_METADATA_MISS_CACHE_TTL = 60 * 60 * 1000;
+const AIRCRAFT_METADATA_ERROR_CACHE_TTL = 5 * 60 * 1000;
+const MAX_AIRCRAFT_METADATA_CACHE_ENTRIES = 1000;
+const OPEN_SKY_POSITION_SOURCES = {
+  0: "ADS-B",
+  1: "ASTERIX",
+  2: "MLAT",
+  3: "FLARM",
+};
 
 // const FlightAware = require('./flightaware');
 
@@ -96,6 +108,7 @@ class VirtualRadar {
     this.fallbackOwnData = settings.fallbackOwnData || false;
     this.feederSerial = settings.feederSerial || null;
     this.failoverToOwnData = settings.failoverToOwnData || false;
+    this.aircraftMetadataCache = new Map();
 
     this.cooldownLogged = false; // Initialize the cooldown log flag
   }
@@ -170,13 +183,14 @@ async getAcInRange() {
 
     // Fetch and enrich aircraft data
     let acListPromises = jsonData.states.map(async (state) => {
-      let ac = await this._getAcNormal(state); // Normalize the data
+      let ac = await this._getAcNormal(
+        state,
+        useOwnData ? "OpenSky own-feed API" : "OpenSky states API"
+      ); // Normalize the data
       if (ac === null) {
         // Invalid aircraft data, skip this aircraft
         return null;
       }
-      ac = await this._getRoute(ac); // Try to enrich with route information
-      ac = await this._getMeta(ac); // Try to enrich with metadata (operator, model, etc.)
 
       // Ensure fallbacks for missing data
       ac.from = ac.from || "N/A";
@@ -273,7 +287,8 @@ async getAc(ACOpts) {
     }
 
     // Normalize and process each aircraft state
-    const acList = jsonData.states.map(async (state) => Promise.resolve(await this._getAcNormal(state)));
+    const stateSource = useOwnData ? "OpenSky own-feed API" : "OpenSky states API";
+    const acList = jsonData.states.map(async (state) => Promise.resolve(await this._getAcNormal(state, stateSource)));
     return Promise.all(acList);
   } catch (error) {
     return Promise.reject(error);
@@ -281,107 +296,198 @@ async getAc(ACOpts) {
 }
 
 
-  // returns the route, operator and flightnumber of a specific aircraft
-  async _getRoute(ac) {
-    // https://opensky-network.org/api/routes?callsign=KLM57N
-    // { callsign: 'KLM52X', route: ['EDDT', 'EHAM'], updateTime: 1561812529000, operatorIata: 'KL', flightNumber: 1826}
-    try {
-      if (!ac.call) return Promise.resolve(ac);
-
-      const query = { callsign: ac.call };
-      const headers = { "cache-control": "no-cache" };
-      const options = {
-        hostname: "opensky-network.org",
-        path: `/api/routes?${qs.stringify(query)}`,
-        headers,
-        method: "GET",
-      };
-
-      const jsonData = await this._makeRequest(options).catch(() => undefined);
-
-      if (!jsonData || !jsonData.callsign) {
-        ac.from = "N/A";
-        ac.to = "N/A";
-        return Promise.resolve(ac);
-      }
-
-      // Enrich route details
-      ac.from = jsonData.route[0] || "N/A";
-      ac.to = jsonData.route[1] || "N/A";
-      ac.op = jsonData.operatorIata || ac.op;
-      return Promise.resolve(ac);
-    } catch (error) {
-      return Promise.resolve(ac); // Ensure aircraft object is still returned
-    }
-  }
-
-  // returns the registration and model of a specific aircraft
+  // Returns the registration, model, type and operator of a specific aircraft.
   async _getMeta(ac) {
-    // https://opensky-network.org/api/metadata/aircraft/icao/a1f788
-    // { registration: 'PH-BXE',
-    // manufacturerName: 'Boeing',
-    // manufacturerIcao: 'BOEING',
-    // model: '737NG 8K2/W',
-    // typecode: 'B738',
-    // serialNumber: '29595',
-    // lineNumber: '',
-    // icaoAircraftClass: 'L2J',
-    // selCal: '',
-    // operator: '',
-    // operatorCallsign: 'KLM',
-    // operatorIcao: 'KLM',
-    // operatorIata: '',
-    // owner: 'Klm Royal Dutch Airlines',
-    // categoryDescription: 'No ADS-B Emitter Category Information',
-    // registered: null,
-    // regUntil: null,
-    // status: '',
-    // built: null,
-    // firstFlightDate: null,
-    // engines: '',
-    // modes: false,
-    // adsb: false,
-    // acars: false,
-    // vdl: false,
-    // notes: '',
-    // country: 'Kingdom of the Netherlands',
-    // lastSeen: null,
-    // firstSeen: null,
-    // icao24: '48415e',
-    // timestamp: 1527559200000 }
     try {
       if (!ac.icao) return Promise.resolve(ac);
 
-      const headers = { "cache-control": "no-cache" };
-      const options = {
-        hostname: "opensky-network.org",
-        path: `/api/metadata/aircraft/icao/${ac.icao}`,
-        headers,
-        method: "GET",
-      };
-
-      const jsonData = await this._makeRequest(options).catch(() => undefined);
-
-      if (!jsonData) {
+      const metadata = await this._getAircraftMetadata(ac.icao);
+      if (!metadata) {
         ac.reg = "N/A";
         ac.mdl = "N/A";
         ac.type = "N/A";
+        ac.metadataSource = "ADSBDB+HexDB:no-result";
+        ac.metadataSources = {};
         return Promise.resolve(ac);
       }
 
       // Enrich aircraft details
-      ac.reg = jsonData.registration || "N/A";
-      ac.mdl = jsonData.model || "N/A";
-      ac.type = jsonData.typecode || "N/A";
-      ac.op = jsonData.operatorIcao || ac.op;
+      ac.reg = metadata.registration || "N/A";
+      ac.mdl = metadata.type || "N/A";
+      ac.type = metadata.icao_type || "N/A";
+      ac.op = metadata.registered_owner_operator_flag_code || metadata.registered_owner || ac.op;
+      ac.metadataSources = metadata._sources || {};
+      ac.metadataSource = [...new Set(Object.values(ac.metadataSources).filter(Boolean))].join("+") || "unknown";
       return Promise.resolve(ac);
     } catch (error) {
       return Promise.resolve(ac); // Ensure aircraft object is still returned
     }
   }
 
+  async _getAircraftMetadata(icao) {
+    const cacheKey = icao.toUpperCase();
+    const cached = this.aircraftMetadataCache.get(cacheKey);
+    if (cached && cached.promise) {
+      return cached.promise;
+    }
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.metadata;
+    }
+    if (cached) {
+      this.aircraftMetadataCache.delete(cacheKey);
+    }
+
+    const promise = this._fetchAircraftMetadata(cacheKey)
+      .then((metadata) => {
+        this._cacheAircraftMetadata(cacheKey, metadata, metadata ? AIRCRAFT_METADATA_CACHE_TTL : AIRCRAFT_METADATA_MISS_CACHE_TTL);
+        return metadata;
+      })
+      .catch((error) => {
+        console.warn(`[OpenSky] Aircraft metadata lookup failed for ${cacheKey}: ${error.message || error}`);
+        this._cacheAircraftMetadata(cacheKey, null, AIRCRAFT_METADATA_ERROR_CACHE_TTL);
+        return null;
+      });
+
+    this.aircraftMetadataCache.set(cacheKey, { promise });
+    return promise;
+  }
+
+  async _fetchAircraftMetadata(icao) {
+    let adsbDbError;
+    let adsbDbMetadata;
+    try {
+      adsbDbMetadata = await this._fetchAdsbDbMetadata(icao);
+      if (adsbDbMetadata && adsbDbMetadata.icao_type) return adsbDbMetadata;
+    } catch (error) {
+      adsbDbError = error;
+    }
+
+    try {
+      const metadata = await this._fetchHexDbMetadata(icao);
+      if (metadata) {
+        const adsbDbSources = (adsbDbMetadata && adsbDbMetadata._sources) || {};
+        const hexDbSources = metadata._sources || {};
+        return {
+          type: (adsbDbMetadata && adsbDbMetadata.type) || metadata.type,
+          icao_type: (adsbDbMetadata && adsbDbMetadata.icao_type) || metadata.icao_type,
+          registration: (adsbDbMetadata && adsbDbMetadata.registration) || metadata.registration,
+          registered_owner_operator_flag_code:
+            (adsbDbMetadata && adsbDbMetadata.registered_owner_operator_flag_code)
+            || metadata.registered_owner_operator_flag_code,
+          registered_owner: (adsbDbMetadata && adsbDbMetadata.registered_owner) || metadata.registered_owner,
+          _sources: {
+            model: (adsbDbMetadata && adsbDbMetadata.type) ? adsbDbSources.model : hexDbSources.model,
+            icaoType: (adsbDbMetadata && adsbDbMetadata.icao_type) ? adsbDbSources.icaoType : hexDbSources.icaoType,
+            registration: (adsbDbMetadata && adsbDbMetadata.registration)
+              ? adsbDbSources.registration
+              : hexDbSources.registration,
+            operator: (
+              adsbDbMetadata
+              && (adsbDbMetadata.registered_owner_operator_flag_code || adsbDbMetadata.registered_owner)
+            )
+              ? adsbDbSources.operator
+              : hexDbSources.operator,
+          },
+        };
+      }
+    } catch (error) {
+      const adsbDbMessage = adsbDbError ? `${adsbDbError.message || adsbDbError}; ` : "";
+      throw new Error(`${adsbDbMessage}${error.message || error}`);
+    }
+
+    if (adsbDbError) throw adsbDbError;
+    return adsbDbMetadata || null;
+  }
+
+  async _fetchAdsbDbMetadata(icao) {
+    const options = {
+      hostname: "api.adsbdb.com",
+      path: `/v0/aircraft/${encodeURIComponent(icao)}`,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "com.gruijter.virtualradar",
+      },
+      method: "GET",
+      skipAuth: true,
+      trackRateLimit: false,
+    };
+    const res = await this._makeHttpsRequest(options);
+    if (res.statusCode === 404) {
+      return null;
+    }
+    const contentType = res.headers["content-type"] || "";
+    if (res.statusCode !== 200 || !contentType.includes("application/json")) {
+      throw new Error(`ADSBDB service error: ${res.statusCode}`);
+    }
+
+    const jsonData = JSON.parse(res.body);
+    const aircraft = jsonData.response && jsonData.response.aircraft;
+    if (!aircraft) return null;
+    return {
+      ...aircraft,
+      _sources: {
+        model: aircraft.type ? "ADSBDB" : "",
+        icaoType: aircraft.icao_type ? "ADSBDB" : "",
+        registration: aircraft.registration ? "ADSBDB" : "",
+        operator: aircraft.registered_owner_operator_flag_code || aircraft.registered_owner ? "ADSBDB" : "",
+      },
+    };
+  }
+
+  async _fetchHexDbMetadata(icao) {
+    const options = {
+      hostname: "hexdb.io",
+      path: `/api/v1/aircraft/${encodeURIComponent(icao)}`,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "com.gruijter.virtualradar",
+      },
+      method: "GET",
+      skipAuth: true,
+      trackRateLimit: false,
+    };
+    const res = await this._makeHttpsRequest(options);
+    if (res.statusCode === 404) {
+      return null;
+    }
+    const contentType = res.headers["content-type"] || "";
+    if (res.statusCode !== 200 || !contentType.includes("application/json")) {
+      throw new Error(`HexDB service error: ${res.statusCode}`);
+    }
+
+    const jsonData = JSON.parse(res.body);
+    if (!jsonData || !jsonData.ICAOTypeCode) {
+      return null;
+    }
+    return {
+      type: jsonData.Type,
+      icao_type: jsonData.ICAOTypeCode,
+      registration: jsonData.Registration,
+      registered_owner_operator_flag_code: jsonData.OperatorFlagCode,
+      registered_owner: jsonData.RegisteredOwners,
+      _sources: {
+        model: jsonData.Type ? "HexDB" : "",
+        icaoType: jsonData.ICAOTypeCode ? "HexDB" : "",
+        registration: jsonData.Registration ? "HexDB" : "",
+        operator: jsonData.OperatorFlagCode || jsonData.RegisteredOwners ? "HexDB" : "",
+      },
+    };
+  }
+
+  _cacheAircraftMetadata(cacheKey, metadata, ttl) {
+    this.aircraftMetadataCache.delete(cacheKey);
+    this.aircraftMetadataCache.set(cacheKey, {
+      metadata,
+      expiresAt: Date.now() + ttl,
+    });
+    while (this.aircraftMetadataCache.size > MAX_AIRCRAFT_METADATA_CACHE_ENTRIES) {
+      const oldestKey = this.aircraftMetadataCache.keys().next().value;
+      this.aircraftMetadataCache.delete(oldestKey);
+    }
+  }
+
   // returns the normalized state of an aircraft
-  async _getAcNormal(state) {
+  async _getAcNormal(state, stateSource = "OpenSky states API") {
     const ac = {
       icao: state[0] ? state[0].toUpperCase() : "",
       call: state[1] ? state[1].replace(/[^0-9a-zA-Z]+/gm, "") : "",
@@ -406,6 +512,10 @@ async getAc(ACOpts) {
       mdl: "",
       type: "",
       mil: false,
+      stateSource,
+      positionSource: OPEN_SKY_POSITION_SOURCES[state[16]] || `OpenSky position source ${state[16] ?? "unknown"}`,
+      metadataSource: "ADSBDB+HexDB:pending",
+      metadataSources: {},
     };
 
     // Validate latitude and longitude
@@ -417,10 +527,10 @@ async getAc(ACOpts) {
     // Calculate the distance
     ac.dst = Math.round(this._getAcDistance(ac) * 1000);
 
-    // Continue processing the aircraft
-    const acEnriched = await this._getRoute(ac);
-    const acEnriched2 = await this._getMeta(acEnriched);
-    return acEnriched2;
+    // OpenSky no longer provides live route or aircraft metadata endpoints.
+    ac.from = "N/A";
+    ac.to = "N/A";
+    return this._getMeta(ac);
   }
 
   _getBounds() {
@@ -507,7 +617,13 @@ async getAc(ACOpts) {
   async _getAuthHeader() {
     if (!this._authLogged) {
       console.log(
-        `[OpenSky] authMethod=${this.authMethod}, clientId set=${!!this.clientId}, clientSecret set=${!!this.clientSecret}, username set=${!!this.username}, password set=${!!this.password}`
+        `[OpenSky] ${getCredentialDiagnostics({
+          authMethod: this.authMethod,
+          clientId: this.clientId,
+          clientSecret: this.clientSecret,
+          username: this.username,
+          password: this.password,
+        })}`
       );
       this._authLogged = true;
     }
@@ -636,7 +752,7 @@ async getAc(ACOpts) {
 
           res.body = resBody;
 
-          if (res.statusCode === 429) {
+          if (res.statusCode === 429 && opts.trackRateLimit !== false) {
             // Rate limit exceeded
             this.apiCredits = 0;
             let retryAfter = parseInt(res.headers['retry-after'], 10);

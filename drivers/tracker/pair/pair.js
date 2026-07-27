@@ -31,31 +31,18 @@ function authMethodSelected() {
 }
 
 function radarSelected() {
+	const selectedRadar = $('#radarSelection').val();
+	const isOpenSky = selectedRadar === 'openSky';
+	const isPaid = selectedRadar === 'adsbExchangePaid';
+	const isLocalFeeder = selectedRadar === 'localFeeder';
 
-	if ($('#radarSelection').val() === 'openSky') {
-        // Show credentials fields for OpenSky
-        $('#credentialsContainer').show();
+	$('#credentialsContainer').toggle(isOpenSky);
+	$('#localFeederContainer').toggle(isLocalFeeder);
+	if (isOpenSky) {
 		authMethodSelected();
-    } else {
-        // Hide credentials fields for other radars
-        $('#credentialsContainer').hide();
-        $('#username').val('');
-        $('#password').val('');
-		$('#clientId').val('');
-		$('#clientSecret').val('');
-		$('#authMethod').val('oauth2');
-		authMethodSelected();
-    }
-
-	if ($('#radarSelection').val() === 'openSky') {
-		$('#APIKey').prop('disabled', true);
-		$('#APIKey').hide();
-		$('#APIKeyLabel').hide();
-	} else {
-		$('#APIKey').prop('disabled', false);
-		$('#APIKey').show();
-		$('#APIKeyLabel').show();
 	}
+	$('#APIKey').prop('disabled', !isPaid).toggle(isPaid);
+	$('#APIKeyLabel').toggle(isPaid);
 }
 
 
@@ -77,6 +64,8 @@ function testSettings() {
 		fallbackOwnData: $('#fallbackOwnData').is(':checked'),
         feederSerial: $('#feederSerial').val(),
 		APIKey: $('#APIKey').val(),
+		localFeederUrl: $('#localFeederUrl').val(),
+		localFeederUnits: $('#localFeederUnits').val(),
 	};
 
 	if (data.radarSelection === 'openSky') {
@@ -88,6 +77,10 @@ function testSettings() {
 			Homey.alert(__('pair.basicMissing'), 'error');
 			return;
 		}
+	}
+	if (data.radarSelection === 'localFeeder' && !data.localFeederUrl.trim()) {
+		Homey.alert(__('pair.localFeederUrlMissing'), 'error');
+		return;
 	}
 
 	const trackIDSelection = $('#trackIDSelection').val();
@@ -102,6 +95,13 @@ function testSettings() {
 		delete data.clientSecret;
 		delete data.fallbackOwnData;
 		delete data.feederSerial;
+	}
+	if (data.radarSelection !== 'adsbExchangePaid') {
+		delete data.APIKey;
+	}
+	if (data.radarSelection !== 'localFeeder') {
+		delete data.localFeederUrl;
+		delete data.localFeederUnits;
 	}
 
 	// Continue to back-end, pass along data

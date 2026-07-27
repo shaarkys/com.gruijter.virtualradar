@@ -21,8 +21,10 @@ along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/
 
 const openSky = require('./radar_opensky');
 const adsbExchangePaid = require('./radar_adsbexchange_paid');
+const localFeeder = require('./radar_local_feeder');
 
 module.exports = {
   openSky,
   adsbExchangePaid,
+  localFeeder,
 };

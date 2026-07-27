@@ -23,6 +23,8 @@ along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/
 const Homey = require("homey");
 const Radar = require("../../radar");
 const geo = require("../../reverseGeo");
+const { getCredentialDiagnostics } = require("../../lib/credentialDiagnostics");
+const { formatAircraftDiagnostic } = require("../../lib/aircraftDiagnostics");
 // const util = require('util');
 
 function toHHMM(secs) {
@@ -128,10 +130,15 @@ class Tracker extends Homey.Device {
         capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: false,
       },
-      adsbExchangeFeeder: {
+      adsbExchangePaid: {
         name: "adsbExchangePaid",
         capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
         APIKey: true,
+      },
+      localFeeder: {
+        name: "localFeeder",
+        capabilities: ["measure_ac_number", "to", "op", "mdl", "dst", "alt", "oc"],
+        APIKey: false,
       },
     };
 
@@ -150,13 +157,15 @@ class Tracker extends Homey.Device {
       await this.addCapability("icao_type");
     }
 
-    this.radarServices.openSky.capabilities.forEach((capability) => {
-      this.registerCapabilityListener(capability, async (value) => {
-        this.log(`Capability ${capability} changed to ${value}`);
-        // Add your logic to handle the capability change
-        return Promise.resolve();
+    if (!this.capabilityListenersRegistered) {
+      this.radarServices.openSky.capabilities.forEach((capability) => {
+        this.registerCapabilityListener(capability, async (value) => {
+          this.log(`Capability ${capability} changed to ${value}`);
+          return Promise.resolve();
+        });
       });
-    });
+      this.capabilityListenersRegistered = true;
+    }
 
     this.intervalIdDevicePoll = setInterval(async () => {
       try {
@@ -218,13 +227,6 @@ class Tracker extends Homey.Device {
   // SDK v3 passes an object: { oldSettings, newSettings, changedKeys }
   async onSettings({ oldSettings, newSettings, changedKeys }) {
     try {
-      const maskVal = (val) => {
-        if (!val) return "false";
-        const str = String(val);
-        if (str.length <= 2) return `${str.length}*`;
-        return `${str.length}*${str.slice(-2)}`;
-      };
-
       const currentSettings = this.getSettings();
       const mergedSettings = { ...currentSettings, ...(oldSettings || {}), ...(newSettings || {}) };
       const authMethod = (newSettings?.authMethod ?? mergedSettings.authMethod ?? "oauth2").toLowerCase();
@@ -233,9 +235,13 @@ class Tracker extends Homey.Device {
       const resolvedUsername = newSettings?.username ?? mergedSettings.username;
       const resolvedPassword = newSettings?.password ?? mergedSettings.password;
 
-      this.log(
-        `[settings] changedKeys=${(changedKeys || []).join(",")}; service=${mergedSettings.service}; authMethod=${authMethod}; clientId=${maskVal(resolvedClientId)}; clientSecret=${maskVal(resolvedClientSecret)}; username=${maskVal(resolvedUsername)}; password=${maskVal(resolvedPassword)}; newKeys=${Object.keys(newSettings || {}).join(",")}`
-      );
+      this.log(`[settings] service=${mergedSettings.service}; ${getCredentialDiagnostics({
+        authMethod,
+        clientId: resolvedClientId,
+        clientSecret: resolvedClientSecret,
+        username: resolvedUsername,
+        password: resolvedPassword,
+      })}`);
 
       if (mergedSettings.service === "openSky") {
         if (authMethod === "oauth2" && (!resolvedClientId || !resolvedClientSecret)) {
@@ -244,6 +250,9 @@ class Tracker extends Homey.Device {
         if (authMethod === "basic" && (!resolvedUsername || !resolvedPassword)) {
           throw new Error("Please enter both username and password for OpenSky legacy authentication.");
         }
+      }
+      if (mergedSettings.service === "localFeeder") {
+        new Radar.localFeeder(mergedSettings);
       }
       // First stop polling the device, then start init after a short delay
       clearInterval(this.intervalIdDevicePoll);
@@ -277,7 +286,6 @@ class Tracker extends Homey.Device {
 
   async scan() {
     try {
-      const acName = this.getName();
       const opts = this.settings;
       const acList = await this.radar.getAc(opts);
       const ac = acList[0];
@@ -289,13 +297,19 @@ class Tracker extends Homey.Device {
         ac.tsecs = Math.round((Date.now() - ac.trackStart) / 1000) || 0;
 
         // Generate tokens once to avoid repetitive function calls
-        ac.locString = await geo.getAclocString(ac); // reverse ReverseGeocoding
+        if (this.settings.service === "localFeeder") {
+          ac.locString = `${ac.lat.toFixed(4)}, ${ac.lon.toFixed(4)}`;
+        } else {
+          ac.locString = await geo.getAclocString(ac); // reverse ReverseGeocoding
+        }
         const tokens = getTokens(ac);
 
         // Aircraft entering airspace (started transmitting)
         if (!this.ac || !this.ac.icao) {
-          this.log(`${acName} icao: '${ac.icao}', started transmitting loc: '${ac.lat}/${ac.lon}'`);
           ac.trackStart = Date.now();
+          this.log(formatAircraftDiagnostic("tracker-online", ac, this.settings.service, {
+            trackedSeconds: 0,
+          }));
           this.flowCards.trackerOnlineTrigger.trigger(this, tokens).catch(this.error);
         }
 
@@ -305,13 +319,17 @@ class Tracker extends Homey.Device {
 
         // Aircraft went airborne
         if (!ac.gnd && this.ac && this.ac.gnd) {
-          this.log(`${acName} icao: '${ac.icao}', just went airborne loc: '${ac.lat}/${ac.lon}'`);
+          this.log(formatAircraftDiagnostic("airborne", ac, this.settings.service, {
+            trackedSeconds: ac.tsecs,
+          }));
           this.flowCards.wentAirborneTrigger.trigger(this, tokens).catch(this.error);
         }
 
         // Aircraft just landed
         if (ac.gnd && this.ac && !this.ac.gnd) {
-          this.log(`${acName} icao: '${ac.icao}', just landed loc: '${ac.lat}/${ac.lon}'`);
+          this.log(formatAircraftDiagnostic("landed", ac, this.settings.service, {
+            trackedSeconds: ac.tsecs,
+          }));
           this.flowCards.justLandedTrigger.trigger(this, tokens).catch(this.error);
         }
 
@@ -323,7 +341,9 @@ class Tracker extends Homey.Device {
 
       // Aircraft left airspace (stopped transmitting)
       if (this.ac && this.ac.icao) {
-        this.log(`${acName} icao: '${this.ac.icao}', stopped transmitting loc: '${this.ac.lat}/${this.ac.lon}'`);
+        this.log(formatAircraftDiagnostic("tracker-offline", this.ac, this.settings.service, {
+          trackedSeconds: this.ac.tsecs,
+        }));
         this.setCapability("onoff", false);
 
         // Use last known tokens
