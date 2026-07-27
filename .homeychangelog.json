@@ -31,5 +31,8 @@
   },
   "3.3.1": {
     "en": "Fix error during pairing"
+  },
+  "3.4.0": {
+    "en": "Added reliable ICAO type, registration, model and operator enrichment for OpenSky aircraft, plus direct LAN support for dump1090, PiAware/SkyAware, readsb, tar1090 and Virtual Radar Server in Radar and Tracker pairing/settings, including automatic endpoint detection, aviation/metric unit selection and operation without an external aircraft API while preserving existing OpenSky and ADS-B Exchange setups."
   }
 }

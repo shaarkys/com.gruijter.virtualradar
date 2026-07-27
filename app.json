@@ -6,7 +6,7 @@
     "nl": "Virtuele Radar"
   },
   "brandColor": "#1d7a36",
-  "version": "3.3.1",
+  "version": "3.4.0",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "description": {
