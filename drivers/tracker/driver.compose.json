@@ -261,10 +261,13 @@
             "en": "The distance of the tracked aircraft will be based on the home location.",
             "nl": "De afstand van het toestel wordt bepaald op basis van de thuis locatie."
           },
+          "min": -90,
+          "max": 90,
+          "step": 0.00000001,
           "value": 52.228936
         },
         {
-          "id": "lng",
+          "id": "lon",
           "type": "number",
           "label": {
             "en": "Home longitude",
@@ -274,6 +277,9 @@
             "en": "The distance of the tracked aircraft will be based on the home location.",
             "nl": "De afstand van het toestel wordt bepaald op basis van de thuis locatie."
           },
+          "min": -180,
+          "max": 180,
+          "step": 0.00000001,
           "value": 5.321492
         },
         {

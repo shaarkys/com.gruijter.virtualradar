@@ -14,6 +14,7 @@ the Free Software Foundation, either version 3 of the License, or
 const http = require("http");
 const https = require("https");
 const GeoPoint = require("geopoint");
+const { getRadarCoordinates } = require("./lib/coordinates");
 
 const DEFAULT_PATHS = [
   "/data/aircraft.json",
@@ -49,8 +50,9 @@ function cleanIdentifier(value) {
 
 class LocalFeederRadar {
   constructor(settings) {
-    this.lat = Number(settings.lat);
-    this.lon = Number(settings.lon ?? settings.lng);
+    const coordinates = getRadarCoordinates(settings);
+    this.lat = coordinates.lat;
+    this.lon = coordinates.lon;
     this.range = Number(settings.dst) * 1000;
     this.center = new GeoPoint(this.lat, this.lon);
     this.timeout = 5000;

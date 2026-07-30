@@ -25,6 +25,7 @@ const Radar = require("../../radar");
 const geo = require("../../reverseGeo");
 const { getCredentialDiagnostics } = require("../../lib/credentialDiagnostics");
 const { formatAircraftDiagnostic } = require("../../lib/aircraftDiagnostics");
+const { getRadarCoordinates } = require("../../lib/coordinates");
 // const util = require('util');
 
 function toHHMM(secs) {
@@ -143,7 +144,18 @@ class Tracker extends Homey.Device {
     };
 
     this.settings = this.getSettings();
-    this.radar = new Radar[this.settings.service](this.settings);
+    try {
+      const coordinates = getRadarCoordinates(this.settings);
+      if (coordinates.usesLegacyLongitude) {
+        await this.setSettings({ lon: coordinates.lon });
+      }
+      this.settings = { ...this.settings, lat: coordinates.lat, lon: coordinates.lon };
+      this.radar = new Radar[this.settings.service](this.settings);
+    } catch (error) {
+      this.error("Tracker initialization failed", error);
+      await this.setUnavailable(error.message);
+      return;
+    }
     this.ac = undefined;
     this.flowCards = {};
     this.registerFlowCards();
@@ -221,6 +233,7 @@ class Tracker extends Homey.Device {
   async onDeleted() {
     this.log(`tracker deleted: ${this.getData().id}`);
     clearInterval(this.intervalIdDevicePoll);
+    clearTimeout(this.reinitializeTimeout);
   }
 
   // This method is called when the user has changed the device's settings in Homey.
@@ -229,6 +242,9 @@ class Tracker extends Homey.Device {
     try {
       const currentSettings = this.getSettings();
       const mergedSettings = { ...currentSettings, ...(oldSettings || {}), ...(newSettings || {}) };
+      const coordinates = getRadarCoordinates(mergedSettings);
+      mergedSettings.lat = coordinates.lat;
+      mergedSettings.lon = coordinates.lon;
       const authMethod = (newSettings?.authMethod ?? mergedSettings.authMethod ?? "oauth2").toLowerCase();
       const resolvedClientId = newSettings?.clientId ?? mergedSettings.clientId;
       const resolvedClientSecret = newSettings?.clientSecret ?? mergedSettings.clientSecret;
@@ -262,8 +278,15 @@ class Tracker extends Homey.Device {
       await this.setAvailable();
 
       // Restart the device initialization after a delay
-      setTimeout(() => {
-        this.onInit();
+      clearTimeout(this.reinitializeTimeout);
+      this.reinitializeTimeout = setTimeout(() => {
+        this.reinitializeTimeout = undefined;
+        this.onInit().catch(async (error) => {
+          this.error("Tracker reinitialization failed", error);
+          await this.setUnavailable(error.message).catch((setUnavailableError) => {
+            this.error("Could not mark tracker unavailable", setUnavailableError);
+          });
+        });
       }, 10000);
 
       // Indicate success by returning a resolved promise

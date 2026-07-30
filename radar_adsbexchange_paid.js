@@ -22,6 +22,7 @@ along with com.gruijter.virtualradar.  If not, see <http://www.gnu.org/licenses/
 const https = require('https');
 const GeoPoint = require('geopoint');
 const qs = require('querystring');
+const { getRadarCoordinates } = require('./lib/coordinates');
 
 // const util = require('util');
 // const FlightAware = require('./flightaware');
@@ -59,8 +60,9 @@ const qs = require('querystring');
 
 class VirtualRadar {
 	constructor(settings) {
-	  this.lat = settings.lat; // WGS-84 latitude in decimal degrees
-	  this.lon = settings.lon; // WGS-84 longitude in decimal degrees
+	  const coordinates = getRadarCoordinates(settings);
+	  this.lat = coordinates.lat; // WGS-84 latitude in decimal degrees
+	  this.lon = coordinates.lon; // WGS-84 longitude in decimal degrees
 	  this.range = settings.dst * 1000; // Radar range in meters
 	  this.lastScan = 0; // Unix timestamp for the last radar update
 	  this.center = new GeoPoint(this.lat, this.lon);

@@ -23,6 +23,7 @@ const Homey = require("homey");
 const Radar = require("../../radar");
 const { getCredentialDiagnostics } = require("../../lib/credentialDiagnostics");
 const { formatAircraftDiagnostic } = require("../../lib/aircraftDiagnostics");
+const { getRadarCoordinates } = require("../../lib/coordinates");
 // const util = require('util');
 
 function getTokens(ac) {
@@ -102,7 +103,15 @@ class RadarDevice extends Homey.Device {
     };
 
     this.settings = this.getSettings();
-    this.radar = new Radar[this.settings.service](this.settings);
+    try {
+      const coordinates = getRadarCoordinates(this.settings);
+      this.settings = { ...this.settings, lat: coordinates.lat, lon: coordinates.lon };
+      this.radar = new Radar[this.settings.service](this.settings);
+    } catch (error) {
+      this.error("Radar initialization failed", error);
+      await this.setUnavailable(error.message);
+      return;
+    }
     this.acList = [];
     this.flowCards = {};
     this.registerFlowCards();
@@ -177,6 +186,7 @@ class RadarDevice extends Homey.Device {
   async onDeleted() {
     this.log(`radar deleted: ${this.getData().id}`);
     clearInterval(this.intervalIdDevicePoll);
+    clearTimeout(this.reinitializeTimeout);
   }
 
   // This method is called when the user has changed the device's settings in Homey.
@@ -185,6 +195,9 @@ class RadarDevice extends Homey.Device {
     try {
       const currentSettings = this.getSettings();
       const mergedSettings = { ...currentSettings, ...(oldSettings || {}), ...(newSettings || {}) };
+      const coordinates = getRadarCoordinates(mergedSettings);
+      mergedSettings.lat = coordinates.lat;
+      mergedSettings.lon = coordinates.lon;
       const authMethod = (newSettings?.authMethod ?? mergedSettings.authMethod ?? "oauth2").toLowerCase();
       const resolvedClientId = newSettings?.clientId ?? mergedSettings.clientId;
       const resolvedClientSecret = newSettings?.clientSecret ?? mergedSettings.clientSecret;
@@ -218,8 +231,15 @@ class RadarDevice extends Homey.Device {
       await this.setAvailable();
 
       // Restart the device initialization after a delay
-      setTimeout(() => {
-        this.onInit();
+      clearTimeout(this.reinitializeTimeout);
+      this.reinitializeTimeout = setTimeout(() => {
+        this.reinitializeTimeout = undefined;
+        this.onInit().catch(async (error) => {
+          this.error("Radar reinitialization failed", error);
+          await this.setUnavailable(error.message).catch((setUnavailableError) => {
+            this.error("Could not mark radar unavailable", setUnavailableError);
+          });
+        });
       }, 10000);
 
       // Indicate success by returning a resolved promise

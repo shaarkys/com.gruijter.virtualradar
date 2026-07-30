@@ -24,6 +24,7 @@ const https = require("https");
 const qs = require("querystring");
 const GeoPoint = require("geopoint");
 const { getCredentialDiagnostics } = require("./lib/credentialDiagnostics");
+const { getRadarCoordinates } = require("./lib/coordinates");
 
 const AIRCRAFT_METADATA_CACHE_TTL = 24 * 60 * 60 * 1000;
 const AIRCRAFT_METADATA_MISS_CACHE_TTL = 60 * 60 * 1000;
@@ -84,8 +85,9 @@ const OPEN_SKY_POSITION_SOURCES = {
 // this class represents a virtual radar
 class VirtualRadar {
   constructor(settings) {
-    this.lat = settings.lat; //	float	WGS-84 latitude in decimal degrees. Can be null.
-    this.lon = settings.lon; //	float	WGS-84 longitude in decimal degrees. Can be null.
+    const coordinates = getRadarCoordinates(settings);
+    this.lat = coordinates.lat; //	float	WGS-84 latitude in decimal degrees.
+    this.lon = coordinates.lon; //	float	WGS-84 longitude in decimal degrees.
     this.range = settings.dst * 1000; // float Radar range in m.
     this.lastScan = 0; // int Unix timestamp (seconds) for the last radar update.
     this.center = new GeoPoint(this.lat, this.lon);
