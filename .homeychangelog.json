@@ -37,5 +37,8 @@
   },
   "3.4.1": {
     "en": "Fixed crashes caused by invalid radar coordinates by adding validation, safe reinitialization handling, and legacy tracker longitude migration."
+  },
+  "3.4.2": {
+    "en": "Driver images updates"
   }
 }
