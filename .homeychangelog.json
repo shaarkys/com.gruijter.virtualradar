@@ -40,5 +40,8 @@
   },
   "3.4.2": {
     "en": "Driver images updates"
+  },
+  "3.4.3": {
+    "en": "Fixed Radar and Tracker coordinates being rounded to whole degrees when saving device settings."
   }
 }
