@@ -72,10 +72,6 @@ function testSettings() {
     return;
   }
   
-  const trackIDSelection = $('#trackIDSelection').val();
-  const trackID = $('#trackID').val();
-  data[trackIDSelection] = trackID;
-
   if (data.radarSelection !== 'openSky') {
     delete data.username;
     delete data.password;

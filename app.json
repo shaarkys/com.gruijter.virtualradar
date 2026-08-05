@@ -2686,7 +2686,7 @@
       },
       "desc": {
         "en": "Operator of the aircraft",
-        "nl": "Operaror van het vliegtuig"
+        "nl": "Operator van het vliegtuig"
       },
       "getable": true,
       "setable": false,

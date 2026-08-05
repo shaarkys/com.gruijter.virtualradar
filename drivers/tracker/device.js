@@ -427,7 +427,7 @@ class Tracker extends Homey.Device {
         this.setCapability("to", "-");
         this.setCapability("icao_type", "-");
         this.setCapability("dst", 0);
-        this.setCapability("tsecs", "-");
+        this.setCapability("ttime", "-");
         return;
       }
       const alt = Math.round(ac.gAlt || ac.bAlt || 0);
