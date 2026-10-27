@@ -43,5 +43,8 @@
   },
   "3.4.3": {
     "en": "Fixed Radar and Tracker coordinates being rounded to whole degrees when saving device settings."
+  },
+  "3.4.4": {
+    "en": "Fixed tracker track-time updates, removed invalid radar pairing field reads, and corrected the Operator description typo."
   }
 }

@@ -1,1 +1,9 @@
 credentials.json
+AGENTS.md
+TESTS/
+tests/
+
+# AI development tooling
+graft/
+.graft/
+.ignore

@@ -6,7 +6,7 @@
     "nl": "Virtuele Radar"
   },
   "brandColor": "#1d7a36",
-  "version": "3.4.3",
+  "version": "3.4.4",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "description": {
@@ -52,6 +52,9 @@
   "license": " GPL-3.0-or-later",
   "contributing": {
     "donate": {
+      "githubSponsors": {
+        "username": "shaarkys"
+      },
       "paypal": {
         "username": "bkubesa"
       }
